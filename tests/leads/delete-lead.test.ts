@@ -44,12 +44,17 @@ describe("deleteLead", () => {
 
   it("marks the row with deletion metadata and never hard-deletes it", async () => {
     const supabase = supabaseStub();
+    const createAuditEntry = vi.fn().mockResolvedValue({ ok: true, entry: {} });
     const result = await deleteLead(leadId, {
       getSupabase: vi.fn().mockResolvedValue(supabase),
       authorize: vi.fn().mockResolvedValue({ id: "user-id" }) as never,
+      createAuditEntry,
     });
 
     expect(result).toEqual({ ok: true, leadId });
+    expect(createAuditEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "LEAD_DELETED", entityId: leadId }),
+    );
     expect(supabase.updateQuery.update).toHaveBeenCalledWith(
       expect.objectContaining({
         deleted_by: "user-id",

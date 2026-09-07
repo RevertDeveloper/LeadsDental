@@ -75,13 +75,18 @@ describe("createNote", () => {
     };
     const supabase = supabaseStub({ insertResult: note });
     const authorize = vi.fn().mockResolvedValue({ id: "user-id" }) as never;
+    const createAuditEntry = vi.fn().mockResolvedValue({ ok: true, entry: {} });
 
     const result = await createNote(validInput, {
       authorize,
       getSupabase: vi.fn().mockResolvedValue(supabase),
+      createAuditEntry,
     });
 
     expect(result).toEqual({ ok: true, note });
+    expect(createAuditEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "NOTE_CREATED", entityId: note.id }),
+    );
     expect(authorize).toHaveBeenCalledWith(clinicId);
     expect(supabase.insertQuery.insert).toHaveBeenCalledWith({
       lead_id: leadId,

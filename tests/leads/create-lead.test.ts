@@ -71,15 +71,24 @@ describe("createLead", () => {
     };
     const supabase = supabaseStub({ data: lead, error: null });
 
+    const createAuditEntry = vi.fn().mockResolvedValue({ ok: true, entry: {} });
     const result = await createLead(
       { ...input, duplicate_of: duplicateId },
       {
         authorize: vi.fn().mockResolvedValue({ id: "user-id" }) as never,
         getSupabase: vi.fn().mockResolvedValue(supabase),
+        createAuditEntry,
       },
     );
 
     expect(result.ok).toBe(true);
+    expect(createAuditEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "LEAD_CREATED",
+        entityType: "lead",
+        entityId: lead.id,
+      }),
+    );
     expect(supabase.query.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         phone_normalized: "612345678",
@@ -88,5 +97,22 @@ describe("createLead", () => {
         created_by: "user-id",
       }),
     );
+  });
+
+  it("does not audit a lead when the insert fails", async () => {
+    const supabase = supabaseStub({ data: null, error: new Error("insert failed") });
+    const createAuditEntry = vi.fn();
+
+    const result = await createLead(
+      { ...input, duplicate_of: duplicateId },
+      {
+        authorize: vi.fn().mockResolvedValue({ id: "user-id" }) as never,
+        getSupabase: vi.fn().mockResolvedValue(supabase),
+        createAuditEntry,
+      },
+    );
+
+    expect(result).toMatchObject({ ok: false, code: "DATABASE_ERROR" });
+    expect(createAuditEntry).not.toHaveBeenCalled();
   });
 });

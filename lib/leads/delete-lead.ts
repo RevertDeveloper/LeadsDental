@@ -3,6 +3,10 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import {
+  createAuditEntry,
+  getLeadAuditValues,
+} from "@/lib/audit/create-audit-entry";
 import { requireClinicAccess } from "@/lib/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { LeadRecord } from "@/types/leads";
@@ -11,11 +15,13 @@ export type DeleteLeadResult =
   | { ok: true; leadId: string }
   | { ok: false; code: "VALIDATION_ERROR"; message: string }
   | { ok: false; code: "NOT_FOUND"; message: string }
+  | { ok: false; code: "AUDIT_ERROR"; message: string }
   | { ok: false; code: "DATABASE_ERROR"; message: string };
 
 type DeleteLeadDependencies = {
   authorize?: typeof requireClinicAccess;
   getSupabase?: () => Promise<SupabaseClient>;
+  createAuditEntry?: typeof createAuditEntry;
 };
 
 /** Marks a lead as deleted while preserving its row and related notes. */
@@ -38,7 +44,9 @@ export async function deleteLead(
     : await createSupabaseServerClient();
   const { data: currentData, error: currentError } = await supabase
     .from("leads")
-    .select("id, clinic_id, deleted_at")
+    .select(
+      "id, name, phone, clinic_id, original_clinic_id, treatment, source, status, duplicate_of, deleted_at",
+    )
     .eq("id", parsed.data)
     .is("deleted_at", null)
     .maybeSingle();
@@ -77,6 +85,26 @@ export async function deleteLead(
       ok: false,
       code: "DATABASE_ERROR",
       message: "No se pudo eliminar el lead. Inténtalo de nuevo.",
+    };
+  }
+
+  const lead = currentData as LeadRecord;
+  const audit = dependencies.createAuditEntry ?? createAuditEntry;
+  const auditResult = await audit({
+    actorUserId: user.id,
+    action: "LEAD_DELETED",
+    entityType: "lead",
+    entityId: lead.id,
+    oldValues: getLeadAuditValues(lead),
+    newValues: { ...getLeadAuditValues(lead), deleted_at: deletedAt },
+    metadata: { soft_delete: true, source: "crm" },
+  });
+
+  if (!auditResult.ok) {
+    return {
+      ok: false,
+      code: "AUDIT_ERROR",
+      message: "El lead se eliminó, pero no se pudo registrar la auditoría.",
     };
   }
 

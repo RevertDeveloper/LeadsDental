@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  createAuditEntry,
+  getLeadAuditValues,
+  getLeadChangedFields,
+} from "@/lib/audit/create-audit-entry";
 import { findDuplicateLeads, type LeadDuplicateCandidate } from "@/lib/leads/find-duplicates";
 import { normalizePhone } from "@/lib/leads/normalize-phone";
 import { canAccessClinic, requireClinicAccess } from "@/lib/permissions";
@@ -19,11 +24,14 @@ export type UpdateLeadResult =
       code: "DUPLICATE_CONFIRMATION_INVALID";
       fieldErrors: LeadFieldErrors;
     }
+  | { ok: false; code: "AUDIT_ERROR"; message: string }
   | { ok: false; code: "NOT_FOUND"; message: string }
   | { ok: false; code: "DATABASE_ERROR"; message: string };
 
 type UpdateLeadDependencies = {
+  authorize?: typeof requireClinicAccess;
   getSupabase?: () => Promise<SupabaseClient>;
+  createAuditEntry?: typeof createAuditEntry;
 };
 
 function issueMap(issues: { path: PropertyKey[]; message: string }[]) {
@@ -52,7 +60,8 @@ export async function updateLead(
   const supabase = dependencies.getSupabase
     ? await dependencies.getSupabase()
     : await createSupabaseServerClient();
-  const user = await requireClinicAccess(parsed.data.clinic_id);
+  const authorize = dependencies.authorize ?? requireClinicAccess;
+  const user = await authorize(parsed.data.clinic_id);
   const { data: currentData, error: currentError } = await supabase
     .from("leads")
     .select(
@@ -89,7 +98,7 @@ export async function updateLead(
   }
 
   if (parsed.data.clinic_id !== current.clinic_id) {
-    await requireClinicAccess(parsed.data.clinic_id);
+    await authorize(parsed.data.clinic_id);
   }
 
   const duplicates = await findDuplicateLeads(
@@ -149,5 +158,65 @@ export async function updateLead(
     };
   }
 
-  return { ok: true, lead: data as LeadRecord };
+  const lead = data as LeadRecord;
+  const audit = dependencies.createAuditEntry ?? createAuditEntry;
+  const changedFields = getLeadChangedFields(current, lead);
+  const auditContext = {
+    actorUserId: user.id,
+    entityType: "lead" as const,
+    entityId: lead.id,
+  };
+  const updateAudit = await audit({
+    ...auditContext,
+    action: "LEAD_UPDATED",
+    oldValues: getLeadAuditValues(current),
+    newValues: getLeadAuditValues(lead),
+    metadata: { changed_fields: changedFields, source: "crm" },
+  });
+
+  if (!updateAudit.ok) {
+    return {
+      ok: false,
+      code: "AUDIT_ERROR",
+      message: "El lead se actualizó, pero no se pudo registrar la auditoría.",
+    };
+  }
+
+  if (current.status !== lead.status) {
+    const statusAudit = await audit({
+      ...auditContext,
+      action: "LEAD_STATUS_CHANGED",
+      oldValues: { status: current.status },
+      newValues: { status: lead.status },
+      metadata: { source: "crm" },
+    });
+
+    if (!statusAudit.ok) {
+      return {
+        ok: false,
+        code: "AUDIT_ERROR",
+        message: "El lead se actualizó, pero no se pudo registrar la auditoría.",
+      };
+    }
+  }
+
+  if (current.clinic_id !== lead.clinic_id) {
+    const clinicAudit = await audit({
+      ...auditContext,
+      action: "LEAD_CLINIC_CHANGED",
+      oldValues: { clinic_id: current.clinic_id },
+      newValues: { clinic_id: lead.clinic_id },
+      metadata: { source: "crm" },
+    });
+
+    if (!clinicAudit.ok) {
+      return {
+        ok: false,
+        code: "AUDIT_ERROR",
+        message: "El lead se actualizó, pero no se pudo registrar la auditoría.",
+      };
+    }
+  }
+
+  return { ok: true, lead };
 }

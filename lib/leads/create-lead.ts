@@ -2,6 +2,10 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  createAuditEntry,
+  getLeadAuditValues,
+} from "@/lib/audit/create-audit-entry";
 import { findDuplicateLeads, type LeadDuplicateCandidate } from "@/lib/leads/find-duplicates";
 import { normalizePhone } from "@/lib/leads/normalize-phone";
 import { requireClinicAccess } from "@/lib/permissions";
@@ -28,11 +32,13 @@ export type CreateLeadResult =
       code: "DUPLICATE_CONFIRMATION_INVALID";
       fieldErrors: LeadFieldErrors;
     }
+  | { ok: false; code: "AUDIT_ERROR"; message: string }
   | { ok: false; code: "DATABASE_ERROR"; message: string };
 
 type CreateLeadDependencies = {
   authorize?: typeof requireClinicAccess;
   getSupabase?: () => Promise<SupabaseClient>;
+  createAuditEntry?: typeof createAuditEntry;
 };
 
 function issueMap(issues: { path: PropertyKey[]; message: string }[]) {
@@ -113,5 +119,24 @@ export async function createLead(
     };
   }
 
-  return { ok: true, lead: data as LeadRecord };
+  const lead = data as LeadRecord;
+  const audit = dependencies.createAuditEntry ?? createAuditEntry;
+  const auditResult = await audit({
+    actorUserId: user.id,
+    action: "LEAD_CREATED",
+    entityType: "lead",
+    entityId: lead.id,
+    newValues: getLeadAuditValues(lead),
+    metadata: { source: "crm" },
+  });
+
+  if (!auditResult.ok) {
+    return {
+      ok: false,
+      code: "AUDIT_ERROR",
+      message: "El lead se guardó, pero no se pudo registrar la auditoría.",
+    };
+  }
+
+  return { ok: true, lead };
 }

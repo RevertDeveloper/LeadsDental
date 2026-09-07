@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { createAuditEntry } from "@/lib/audit/create-audit-entry";
 import { requireClinicAccess } from "@/lib/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { noteCreateSchema } from "@/lib/validation/note-schemas";
@@ -13,11 +14,13 @@ export type CreateNoteResult =
   | { ok: true; note: NoteRecord }
   | { ok: false; code: "VALIDATION_ERROR"; fieldErrors: NoteFieldErrors }
   | { ok: false; code: "LEAD_NOT_FOUND"; message: string }
+  | { ok: false; code: "AUDIT_ERROR"; message: string }
   | { ok: false; code: "DATABASE_ERROR"; message: string };
 
 type CreateNoteDependencies = {
   authorize?: typeof requireClinicAccess;
   getSupabase?: () => Promise<SupabaseClient>;
+  createAuditEntry?: typeof createAuditEntry;
 };
 
 const noteFields = "id, lead_id, text, type, created_at, created_by, metadata";
@@ -93,5 +96,24 @@ export async function createNote(
     };
   }
 
-  return { ok: true, note: data as NoteRecord };
+  const note = data as NoteRecord;
+  const audit = dependencies.createAuditEntry ?? createAuditEntry;
+  const auditResult = await audit({
+    actorUserId: user.id,
+    action: "NOTE_CREATED",
+    entityType: "note",
+    entityId: note.id,
+    newValues: { type: note.type },
+    metadata: { lead_id: note.lead_id, source: "crm" },
+  });
+
+  if (!auditResult.ok) {
+    return {
+      ok: false,
+      code: "AUDIT_ERROR",
+      message: "La nota se guardó, pero no se pudo registrar la auditoría.",
+    };
+  }
+
+  return { ok: true, note };
 }

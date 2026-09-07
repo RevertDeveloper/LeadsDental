@@ -16,7 +16,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 3 — UI Foundation**
 - [x] **Fase 4 — Leads: dominio + CRUD**
 - [x] **Fase 5 — Notas y actividad**
-- [ ] **Fase 6 — Auditoría**
+- [x] **Fase 6 — Auditoría**
 - [ ] **Fase 7 — Ficha de lead y pipeline**
 - [ ] **Fase 8 — IA Follow-up**
 - [ ] **Fase 9 — Dashboard**
@@ -1230,6 +1230,58 @@ innecesarios.
 - **Commit:** `feat(audit): audit CRM mutations`
 
 ---
+
+# Cierre de Fase 6 — 2026-09-07
+
+La fase queda implementada y validada.
+
+- [x] **F6-T01:** servicio central `createAuditEntry` con contrato Zod,
+  acciones y entidades tipadas, actor server-side, valores anteriores/nuevos y
+  metadata JSON.
+- [x] **F6-T02:** auditoría integrada en creación, edición, cambio de estado,
+  cambio de clínica, soft delete de leads y creación de notas.
+
+### Decisiones registradas
+
+- Los snapshots de leads no guardan nombre ni teléfono; se conservan los
+  campos operativos necesarios para trazabilidad y los nombres de los campos
+  modificados.
+- Una mutación sólo intenta auditarse después de que Supabase confirme su
+  escritura principal; si falla la auditoría, el servicio devuelve un error
+  explícito y no presenta la operación como completamente trazada.
+- Las notas sólo registran en auditoría su tipo y el lead asociado; el texto
+  potencialmente sensible permanece únicamente en `notes`.
+- La auditoría utiliza el cliente Supabase autenticado y respeta la policy RLS
+  `actor_user_id = auth.uid()`; no se usa `service_role`.
+
+### Archivos incorporados o modificados
+
+- `types/audit.ts`
+- `lib/audit/create-audit-entry.ts`
+- `lib/leads/create-lead.ts`
+- `lib/leads/update-lead.ts`
+- `lib/leads/delete-lead.ts`
+- `lib/notes/create-note.ts`
+- `tests/audit/create-audit-entry.test.ts`
+- `tests/leads/update-lead.test.ts`
+- tests existentes de leads/notas ampliados con aserciones de auditoría.
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 12 archivos, 35 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+
+### Commits de la fase
+
+- `155026d` `feat(audit): add audit logging service`
+- `feat(audit): audit CRM mutations` (este commit)
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 7 — Ficha de lead y pipeline**, comenzando por
+`F7-T01`.
 
 # FASE 7 — Ficha de lead y pipeline
 
