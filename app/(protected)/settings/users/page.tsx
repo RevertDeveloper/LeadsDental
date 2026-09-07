@@ -1,4 +1,5 @@
 import { UserPlus, UsersRound } from "lucide-react";
+import Link from "next/link";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreateUserForm } from "@/components/settings/create-user-form";
@@ -31,6 +32,10 @@ export default async function UsersSettingsPage() {
           <UsersRound className="size-4" aria-hidden="true" />
           <span><strong>{users.length}</strong> usuarios registrados</span>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="rounded-xl bg-primary/10 px-3 py-2 font-medium text-primary" aria-current="page">Usuarios</span>
+        <Link href="/settings/clinics" className="rounded-xl px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">Clínicas</Link>
       </div>
       <Card>
         <CardHeader className="border-b border-border/70">
