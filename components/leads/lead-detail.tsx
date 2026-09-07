@@ -14,11 +14,13 @@ import { NoteForm } from "@/components/notes/note-form";
 import { NoteList } from "@/components/notes/note-list";
 import { LeadClinicBadge } from "@/components/leads/lead-clinic-badge";
 import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
+import { LeadStatusSelector } from "@/components/leads/lead-status-selector";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { NoteFormState } from "@/lib/notes/form-state";
 import type { NoteRecord } from "@/types/notes";
 import type { LeadWithClinic } from "@/types/leads";
+import type { LeadStatusFormState } from "@/lib/leads/status-form-state";
 
 const treatmentLabels = {
   implantes: "Implantes",
@@ -48,9 +50,18 @@ type LeadDetailProps = {
     previousState: NoteFormState,
     formData: FormData,
   ) => Promise<NoteFormState>;
+  updateLeadStatusAction: (
+    previousState: LeadStatusFormState,
+    formData: FormData,
+  ) => Promise<LeadStatusFormState>;
 };
 
-export function LeadDetail({ lead, notes, createNoteAction }: LeadDetailProps) {
+export function LeadDetail({
+  lead,
+  notes,
+  createNoteAction,
+  updateLeadStatusAction,
+}: LeadDetailProps) {
   const originalClinicChanged =
     lead.original_clinic_id !== null && lead.original_clinic_id !== lead.clinic_id;
 
@@ -112,6 +123,12 @@ export function LeadDetail({ lead, notes, createNoteAction }: LeadDetailProps) {
             </p>
             <div className="mt-2">
               <LeadStatusBadge status={lead.status} />
+              <LeadStatusSelector
+                key={`${lead.id}-${lead.status}`}
+                leadId={lead.id}
+                currentStatus={lead.status}
+                action={updateLeadStatusAction}
+              />
             </div>
           </div>
           <div className="flex items-start gap-3 border-t border-border pt-4 sm:col-span-2 lg:col-span-4">

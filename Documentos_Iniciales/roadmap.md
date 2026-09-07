@@ -17,7 +17,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 4 — Leads: dominio + CRUD**
 - [x] **Fase 5 — Notas y actividad**
 - [x] **Fase 6 — Auditoría**
-- [ ] **Fase 7 — Ficha de lead y pipeline**
+- [x] **Fase 7 — Ficha de lead y pipeline**
 - [ ] **Fase 8 — IA Follow-up**
 - [ ] **Fase 9 — Dashboard**
 - [ ] **Fase 10 — Settings y control de administración**
@@ -1339,6 +1339,64 @@ La siguiente unidad es **Fase 7 — Ficha de lead y pipeline**, comenzando por
   - La UI refleja inmediatamente el nuevo estado.
 - **Testing / Validación:** Unit + integration.
 - **Commit:** `feat(leads): add pipeline status transitions`
+
+## Cierre de Fase 7 — 2026-09-07
+
+La fase queda implementada y validada.
+
+- [x] **F7-T01:** ficha `/leads/[id]` completa con contacto, clínica actual,
+  tratamiento, fuente, estado, clínica original cuando aplica, timeline,
+  edición, notas y área preparada para IA supervisada.
+- [x] **F7-T02:** selector de estados del pipeline con mutación server-side,
+  validación Zod, autorización por clínica, actualización de `updated_at` vía
+  trigger existente y auditoría `LEAD_STATUS_CHANGED` con valores anterior y
+  nuevo.
+
+### Decisiones registradas
+
+- La ficha se compone en `LeadDetail`; la página sigue siendo un Server
+  Component y devuelve `notFound()` cuando el lead no existe o no pertenece al
+  alcance RLS del usuario.
+- La clínica original sólo muestra su nombre si pertenece al alcance autorizado
+  del usuario; en otro caso se indica de forma genérica que es otra clínica.
+- El selector de estado no impone un workflow rígido: permite cualquiera de
+  los cinco estados operativos del MVP y evita generar auditoría para un cambio
+  que no modifica el estado.
+- La acción de cambio de estado vuelve a leer el lead antes de mutarlo y usa
+  una comprobación optimista del estado anterior para no sobrescribir un cambio
+  concurrente.
+- El área de IA queda presentada como punto de integración de Fase 8; no hace
+  llamadas a proveedores ni envía mensajes automáticamente.
+
+### Archivos incorporados o modificados
+
+- `components/leads/lead-detail.tsx`
+- `components/leads/lead-status-selector.tsx`
+- `app/(protected)/leads/[id]/page.tsx`
+- `app/(protected)/leads/[id]/actions.ts`
+- `lib/leads/get-lead.ts`
+- `lib/leads/status-form-state.ts`
+- `lib/leads/update-lead-status.ts`
+- `types/leads.ts`
+- `tests/leads/update-lead-status.test.ts`
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 13 archivos, 38 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+- `npm run build` ✅ — Next.js 16.3.4 compila las rutas protegidas y la nueva
+  Server Action de pipeline.
+
+### Commits de la fase
+
+- `c424f7c` `feat(leads): add lead detail view`
+- `feat(leads): add pipeline status transitions` (este commit)
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 8 — IA Follow-up**, comenzando por `F8-T01`.
 
 ---
 
