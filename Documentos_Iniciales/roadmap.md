@@ -21,7 +21,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 8 — IA Follow-up**
 - [ ] **Fase 9 — Dashboard**
 - [x] **Fase 10 — Settings y control de administración**
-- [ ] **Fase 11 — Hardening, errores y UX**
+- [x] **Fase 11 — Hardening, errores y UX**
 - [ ] **Fase 12 — Testing integral**
 - [ ] **Fase 13 — Demo Data**
 - [ ] **Fase 14 — Producción**
@@ -2004,6 +2004,75 @@ La siguiente unidad definida por el roadmap es **Fase 11 — Hardening, errores 
 - **Commit:** `chore(security): audit secret exposure`
 
 ---
+
+## Cierre de Fase 11 — 2026-09-07
+
+La fase queda implementada y validada.
+
+- [x] **F11-T01:** estados de carga con skeletons para rutas protegidas,
+  boundaries de error global/protegido, 404 contextual, empty states de
+  administración y feedback uniforme en las mutaciones. Los botones se
+  deshabilitan mientras sus Server Actions están pendientes y los errores de
+  guardado/generación usan mensajes accionables.
+- [x] **F11-T02:** cabeceras globales en `next.config.ts` para HSTS, MIME
+  sniffing, clickjacking, referrer policy, permissions policy y una CSP
+  compatible con Next.js, Supabase y los recursos locales.
+- [x] **F11-T03:** auditoría estática de secretos, protección `server-only`,
+  prueba de fronteras entre Client Components y módulos sensibles, revisión
+  del bundle cliente y documentación en `docs/security-audit.md`.
+
+### Decisiones registradas
+
+- Los errores inesperados se muestran mediante un boundary con reintento; el
+  usuario no recibe stacks ni detalles internos.
+- La CSP permite sólo los orígenes necesarios para la aplicación y mantiene
+  las excepciones de inline/eval imprescindibles para el runtime actual de
+  Next.js.
+- Las claves reales continúan fuera de Git. El script `demo:users` es una
+  utilidad server-side de CLI y no forma parte del bundle del navegador.
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 24 archivos, 69 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+- `npm run build` ✅ — Next.js 16.3.4 compila la aplicación y los nuevos
+  boundaries.
+- Inspección HTTP ✅ — las cabeceras aparecen en el servidor de producción
+  local mediante `curl`.
+- Smoke Playwright público ✅ — el 404 personalizado se renderiza con estado
+  HTTP 404. Las rutas privadas requieren un proyecto Supabase válido.
+- Auditoría de bundle y Git ✅ — no aparecen nombres de secretos en
+  `.next/static`, patrones de credenciales hardcoded en el código rastreado ni
+  patrones de credenciales en el historial.
+- Smoke autenticado ⏸️ — `/login` no puede completar la validación porque el
+  `.env` local todavía apunta al dominio placeholder `your-project.supabase.co`;
+  el servidor registra `AUTHORIZATION_UNAVAILABLE`. No se modificaron secretos
+  ni configuración local para ocultar esta limitación.
+
+### Archivos incorporados o modificados
+
+- `app/(protected)/loading.tsx`, `app/(protected)/error.tsx`, `app/error.tsx`,
+  `app/not-found.tsx`
+- `components/ui/action-feedback.tsx`, `components/ui/protected-loading.tsx`,
+  `components/ui/route-error.tsx`, `components/ui/skeleton.tsx`
+- `next.config.ts`
+- `tests/config/security-headers.test.ts`,
+  `tests/config/secrets-boundary.test.ts`
+- `docs/security-audit.md`
+
+### Commits de la fase
+
+- `90da03b` `feat(ui): improve async states and error handling`
+- `59a4d66` `chore(security): harden HTTP headers`
+- `chore(security): audit secret exposure` (este commit)
+
+### Siguiente fase
+
+La siguiente unidad del roadmap es **Fase 12 — Testing integral**. La
+validación remota pendiente de Fase 9 y el smoke autenticado de esta fase
+deberán retomarse cuando exista un proyecto Supabase válido y usuarios demo.
 
 # FASE 12 — Testing integral
 
