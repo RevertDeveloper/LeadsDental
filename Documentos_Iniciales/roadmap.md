@@ -1651,12 +1651,23 @@ La fase queda implementada y validada.
 - `npm run lint` ✅
 - `git diff --check` ✅
 - `npm run build` ✅ — Next.js 16.3.4 compila las rutas protegidas y la Server Action de IA.
-- Prueba real controlada contra OpenAI ⏸️ — pendiente de `OPENAI_API_KEY`,
-  proyecto Supabase y disponibilidad del modelo configurado.
+- Prueba real controlada contra OpenAI 🟡 — habilitada desde el entorno local:
+  `.env` ya contiene `OPENAI_API_KEY`. La clave permanece fuera de Git y no se
+  incluye en este documento; ya se puede ejecutar una llamada real usando el
+  modelo configurado, siempre que la cuenta tenga acceso a él.
 - Smoke Playwright ⏸️ — el helper levanta Next correctamente, pero la sesión
   Supabase configurada devuelve `AUTHORIZATION_UNAVAILABLE`; queda pendiente
   ejecutarlo con un proyecto y usuario de demo válidos en la fase de testing
   integral.
+
+### Actualización de entorno — 2026-09-07
+
+El entorno local `.env` ha sido actualizado con la API key de OpenAI. Esto
+desbloquea las pruebas reales controladas de generación IA. `.env` está ignorado
+por Git y la clave sólo debe consumirse server-side; no se debe copiar a
+`.env.example`, documentación, logs ni commits. La prueba real completa desde
+la ficha del lead seguirá necesitando también una sesión Supabase válida y un
+lead accesible.
 
 ### Commits de la fase
 
