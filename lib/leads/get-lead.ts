@@ -34,5 +34,13 @@ export async function getLeadById(id: string): Promise<LeadWithClinic | null> {
   const lead = data as LeadWithClinic;
   const clinic = user.clinics.find((candidate) => candidate.id === lead.clinic_id);
 
-  return clinic ? { ...lead, clinic } : null;
+  if (!clinic) {
+    return null;
+  }
+
+  const originalClinic = lead.original_clinic_id
+    ? user.clinics.find((candidate) => candidate.id === lead.original_clinic_id) ?? null
+    : null;
+
+  return { ...lead, clinic, originalClinic };
 }

@@ -42,4 +42,13 @@ export type LeadWithClinic = LeadRecord & {
     color: string;
     active: boolean;
   };
+  /** Present only when the original clinic is still in the user's scope. */
+  originalClinic?: {
+    id: string;
+    name: string;
+    city: string;
+    slug: string;
+    color: string;
+    active: boolean;
+  } | null;
 };
