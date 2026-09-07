@@ -1,0 +1,2416 @@
+Informe maestro de estrategia - DelegIA / Clínica Dental Vitalis
+
+1. Objetivo del proyecto
+
+La estrategia correcta no es construir simplemente un CRUD de leads, sino construir un mini CRM comercial interno, orientado a seguimiento y con IA integrada, que resuelva el problema de negocio descrito por Vitalis:
+
+centralizar leads, evitar pérdida de seguimientos, reducir duplicados y acelerar el contacto con leads de alto valor.
+
+Esto encaja especialmente bien con el posicionamiento actual de DelegIA: la empresa presenta su propuesta alrededor de sistemas internos personalizados, CRM y seguimiento comercial con IA, automatización, trazabilidad y supervisión humana. En su web describen precisamente la unificación de leads procedentes de diferentes canales, el seguimiento del pipeline y la intervención humana donde aporta criterio. 
+
+La prueba confirma que no buscan una maqueta: exigen una aplicación funcional, desplegada, conectada a una base de datos real, autenticada y con una integración real de OpenAI/Claude. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Por tanto, la candidatura debe transmitir cuatro capacidades:
+
+producto + ingeniería + IA aplicada + criterio operativo.
+
+⸻
+
+2. Qué está evaluando realmente DelegIA
+
+El documento deja bastante claro que el ejercicio está diseñado para evaluar más que código.
+
+DelegIA explica que trabaja con SaaS mínimos viables funcionando en plazos cortos y que la prueba evalúa especialmente la capacidad de entregar algo real, comunicar avances, avisar de bloqueos y demostrar que funciona en directo. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Además, dejan explícitamente varios huecos de producto para que el candidato tome decisiones y las documente en el README. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Esto significa que hacer exactamente el mínimo requerido no es suficiente para maximizar la candidatura.
+
+La estrategia que recomiendo es:
+
+                 BRIEF
+                   │
+                   ▼
+            PRODUCT DISCOVERY
+                   │
+                   ▼
+          MVP pequeño y sólido
+                   │
+       ┌───────────┴───────────┐
+       ▼                       ▼
+  UX profesional          Arquitectura limpia
+       │                       │
+       └───────────┬───────────┘
+                   ▼
+             IA útil y segura
+                   │
+                   ▼
+            Auditabilidad
+                   │
+                   ▼
+        Mejoras de negocio fase 2
+
+No intentaría impresionar añadiendo veinte funcionalidades. Intentaría demostrar que sé decidir qué construir y cómo construirlo correctamente.
+
+⸻
+
+3. Stack definitivo
+
+La prueba prácticamente marca el stack:
+
+Capa	Decisión
+Frontend	Next.js + TypeScript
+UI	Tailwind CSS + shadcn/ui
+Backend	Next.js Route Handlers / Server Actions
+Auth	Supabase Auth
+DB	Supabase PostgreSQL
+Seguridad DB	RLS
+IA	OpenAI Responses API
+Modelo MVP	GPT-5.6 Luna
+Hosting	Vercel
+Control de versiones	Git + GitHub
+Tests	Vitest + Playwright
+Validación	TypeScript + Zod
+Observabilidad	logs estructurados + audit_log
+Dominio	delegia.carlosrevert.es
+Infra local	/DelegIA/ClinicaDental
+
+Supabase documenta específicamente la integración de Auth con Next.js App Router y recomienda RLS para controlar el acceso a los datos. 
+
+Decisión importante: no crear un backend Python independiente
+
+Aunque tienes experiencia con FastAPI, no lo utilizaría aquí.
+
+El brief pide Next.js + Supabase + Vercel. Introducir:
+
+Next.js
+   ↓
+FastAPI
+   ↓
+Supabase
+
+añadiría infraestructura, despliegue, autenticación entre servicios y superficie de ataque sin aportar valor suficiente para este MVP.
+
+La arquitectura será:
+
+Browser
+   │
+   ▼
+Next.js / Vercel
+   ├── Server Components
+   ├── Client Components
+   ├── Route Handlers
+   └── Server Actions
+           │
+           ├──────────────► Supabase Auth
+           │
+           ├──────────────► Supabase PostgreSQL
+           │
+           └──────────────► OpenAI API
+
+Esto además deja un proyecto muy fácil de desplegar y explicar durante el Loom.
+
+⸻
+
+4. Entorno de desarrollo y despliegue
+
+La carpeta inicial será exactamente:
+
+DelegIA/
+└── ClinicaDental/
+
+Recomiendo que ClinicaDental sea el root del repositorio Git.
+
+Estructura:
+
+DelegIA/
+└── ClinicaDental/
+    ├── app/
+    ├── components/
+    ├── lib/
+    ├── hooks/
+    ├── types/
+    ├── supabase/
+    │   ├── migrations/
+    │   ├── seed.sql
+    │   └── tests/
+    ├── public/
+    ├── tests/
+    ├── docs/
+    ├── scripts/
+    ├── .env.local
+    ├── .env.example
+    ├── README.md
+    ├── package.json
+    ├── tsconfig.json
+    ├── next.config.ts
+    └── ...
+
+El rango:
+
+10600-10610
+
+queda reservado por si necesitamos servicios locales auxiliares.
+
+Pero el MVP no necesita publicar ningún puerto propio.
+
+Desarrollo:
+
+localhost:3000
+
+Producción:
+
+https://delegia.carlosrevert.es
+
+Vercel permite conectar subdominios mediante CNAME y proporciona el destino exacto desde la configuración de Domains del proyecto. 
+
+⸻
+
+5. Modelo de producto
+
+La aplicación tendrá cuatro áreas principales:
+
+┌──────────────────────────────────────────┐
+│                 SIDEBAR                  │
+│                                          │
+│  Dashboard                               │
+│  Leads                                   │
+│  Actividad                               │
+│  Configuración                            │
+│                                          │
+│  ─────────────────────                   │
+│  Usuario                                  │
+│  Clínica                                  │
+└──────────────────────────────────────────┘
+
+Dashboard
+
+Debe responder en cinco segundos a:
+
+* cuántos leads nuevos hay;
+* cuántos requieren seguimiento;
+* cuántos están en cada fase;
+* qué clínica acumula más leads;
+* qué tratamientos predominan;
+* qué leads necesitan actuación inmediata.
+
+No convertirlo en un dashboard lleno de gráficas.
+
+La prioridad es:
+
+ACCIONABLE > DECORATIVO
+
+⸻
+
+6. Pipeline comercial
+
+Aunque el brief únicamente proporciona estados, conceptualmente lo trataremos como pipeline:
+
+NUEVO
+  ↓
+CONTACTADO
+  ↓
+CITA AGENDADA
+  ↓
+CLIENTE
+
+Con salidas:
+
+CONTACTADO ─────► NO INTERESADO
+CITA AGENDADA ──► NO INTERESADO
+
+Visualmente:
+
+Nuevo
+  │
+  ▼
+Contactado
+  │
+  ├─────────────► No interesado
+  │
+  ▼
+Cita agendada
+  │
+  ├─────────────► No interesado
+  │
+  ▼
+Cliente
+
+Esto permite que la aplicación funcione como un pequeño CRM y no como una simple tabla.
+
+⸻
+
+7. Clínicas y sistema visual
+
+Cada clínica tendrá una identidad cromática propia.
+
+Recomiendo:
+
+Clínica	Color	HEX
+Madrid	Azul petróleo	#2563EB
+Valencia	Verde esmeralda	#059669
+Sevilla	Ámbar oscuro	#D97706
+
+No utilizar el color como único identificador.
+
+Cada elemento mostrará:
+
+● Madrid
+● Valencia
+● Sevilla
+
+junto con texto.
+
+Esto garantiza accesibilidad y evita que una persona con daltonismo dependa exclusivamente del color.
+
+Uso del color
+
+El color de clínica aparecerá en:
+
+* badge;
+* indicador vertical del lead;
+* pequeños acentos;
+* estadísticas;
+* filtros activos.
+
+No recomiendo hacer:
+
+Madrid = interfaz azul completa
+Valencia = interfaz verde completa
+Sevilla = interfaz naranja completa
+
+Porque perderíamos el aspecto de producto profesional.
+
+⸻
+
+8. Diseño visual
+
+La estética debe transmitir:
+
+software B2B moderno + entorno sanitario + eficiencia operacional.
+
+No debe parecer:
+
+* una plantilla médica;
+* un SaaS genérico;
+* un dashboard financiero;
+* una landing page.
+
+Dirección visual
+
+Fondo:
+#F8FAFC
+Superficie:
+#FFFFFF
+Texto:
+#0F172A
+Texto secundario:
+#64748B
+Bordes:
+#E2E8F0
+
+Componentes:
+
+* tarjetas blancas;
+* radios moderados;
+* sombras muy suaves;
+* tipografía limpia;
+* mucho espacio;
+* iconografía simple;
+* badges;
+* skeleton loading;
+* estados vacíos bien diseñados.
+
+shadcn/ui encaja especialmente bien porque el propio documento de la prueba la propone junto con 21st.dev y v0 para acelerar el diseño. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+9. Pantallas
+
+9.1 Login
+
+Minimalista:
+
+Clínica Dental Vitalis
+Gestión de leads
+[ Email ]
+[ Contraseña ]
+[ Iniciar sesión ]
+¿Has olvidado tu contraseña?
+
+No habrá registro público.
+
+Esto es importante porque el sistema es interno.
+
+Los usuarios serán creados por administración.
+
+⸻
+
+10. Gestión de usuarios
+
+Aquí conviene ir un poco más allá del mínimo exigido.
+
+Roles
+
+Propongo tres roles:
+
+ADMIN
+
+Puede:
+
+* ver todas las clínicas;
+* crear usuarios;
+* desactivar usuarios;
+* modificar leads;
+* reasignar clínica;
+* ver auditoría;
+* acceder a configuración.
+
+CLINIC_MANAGER
+
+Puede:
+
+* ver las clínicas asignadas;
+* editar leads;
+* añadir notas;
+* generar mensajes IA;
+* mover leads;
+* consultar actividad.
+
+RECEPTIONIST
+
+Puede:
+
+* ver leads de su clínica;
+* crear;
+* editar;
+* añadir notas;
+* generar mensajes;
+* actualizar estado.
+
+No puede:
+
+* administrar usuarios;
+* cambiar permisos;
+* acceder a auditoría completa.
+
+⸻
+
+11. Modelo de autorización
+
+La autorización se realizará en dos capas:
+
+           Supabase Auth
+                 │
+                 ▼
+          ¿Está autenticado?
+                 │
+                Sí
+                 │
+                 ▼
+          ¿Está activo?
+                 │
+                Sí
+                 │
+                 ▼
+           ¿Qué role tiene?
+                 │
+       ┌─────────┼─────────┐
+       ▼         ▼         ▼
+      ADMIN   MANAGER    RECEPTIONIST
+
+Y posteriormente:
+
+¿Puede acceder a esta clínica?
+
+Esto debe estar protegido mediante RLS, no sólo mediante frontend.
+
+Supabase destaca explícitamente que RLS debe utilizarse como sistema de autorización de las filas y que las políticas deben existir para cada operación relevante. 
+
+⸻
+
+12. Modelo de usuarios recomendado
+
+No metería el rol ni permisos exclusivamente en auth.users.
+
+Crearíamos:
+
+profiles
+
+y:
+
+user_clinics
+
+Así podemos tener:
+
+Carlos
+  └── ADMIN
+       └── Madrid
+       └── Valencia
+       └── Sevilla
+
+o:
+
+Ana
+  └── RECEPTIONIST
+       └── Madrid
+
+o:
+
+Laura
+  └── CLINIC_MANAGER
+       └── Valencia
+       └── Sevilla
+
+Esto es ligeramente más sofisticado que lo mínimo, pero proporciona una arquitectura realmente escalable.
+
+⸻
+
+13. Base de datos
+
+El PDF exige como mínimo dos tablas relacionadas:
+
+leads
+notes
+
+pero permite ampliarlas. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Nuestra arquitectura será:
+
+clinics
+   │
+   ├──────────────┐
+   │              │
+   ▼              ▼
+leads          user_clinics
+   │
+   ▼
+notes
+profiles
+   │
+   ▼
+user_clinics
+audit_log
+   │
+   ├── leads
+   ├── notes
+   ├── users
+   └── IA
+
+⸻
+
+14. Tabla clinics
+
+clinics
+--------
+id uuid PK
+name text
+city text
+slug text
+color text
+active boolean
+created_at timestamptz
+
+Datos iniciales:
+
+Madrid
+Valencia
+Sevilla
+
+⸻
+
+15. Tabla profiles
+
+profiles
+--------
+id uuid PK → auth.users.id
+full_name text
+role enum
+active boolean
+created_at
+updated_at
+
+No almacenar contraseñas.
+
+Supabase Auth se encargará de la autenticación.
+
+⸻
+
+16. Tabla user_clinics
+
+user_clinics
+------------
+user_id uuid FK
+clinic_id uuid FK
+created_at
+PRIMARY KEY (user_id, clinic_id)
+
+Esto permite muchos-a-muchos.
+
+⸻
+
+17. Tabla principal leads
+
+Propongo:
+
+leads
+-----
+id uuid PK
+name text NOT NULL
+phone text NOT NULL
+phone_normalized text NOT NULL
+clinic_id uuid NOT NULL
+original_clinic_id uuid NULL
+treatment enum NOT NULL
+source enum NOT NULL
+status enum NOT NULL
+duplicate_of uuid NULL
+created_at timestamptz
+updated_at timestamptz
+created_by uuid
+updated_by uuid
+
+Tratamientos
+
+Exactamente los del documento:
+
+implantes
+ortodoncia
+estetica
+revision
+
+Fuentes
+
+instagram
+web
+llamada
+
+Estados
+
+nuevo
+contactado
+cita_agendada
+no_interesado
+cliente
+
+De esta manera respetamos el vocabulario del brief. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+18. ¿Puede cambiar la clínica?
+
+Sí.
+
+Esta es una decisión que dejaría explícita en README.
+
+Motivo:
+
+un lead puede haber llegado inicialmente a Madrid pero posteriormente indicar que Valencia le resulta más conveniente.
+
+Bloquear la clínica original produciría datos operativos incorrectos.
+
+Pero distinguiremos:
+
+original_clinic_id
+clinic_id
+
+Así mantenemos:
+
+Origen:
+Madrid
+Clínica actual:
+Valencia
+
+Esto permite en el futuro analizar:
+
+¿Qué clínica recibe más leads?
+¿Qué clínica termina atendiendo más?
+¿Cuántos leads se reasignan?
+
+Es una decisión mucho más sólida que simplemente sobrescribir el campo.
+
+⸻
+
+19. ¿Qué hacer con teléfonos duplicados?
+
+No fusionaría automáticamente.
+
+Decisión:
+
+detectar + avisar + permitir decidir.
+
+Cuando se crea un lead:
+
+Existe un lead con este teléfono.
+Madrid
+Implantes
+Contactado
+Creado hace 2 días
+[Ver lead existente]
+[Crear de todos modos]
+
+Si se crea de todos modos:
+
+duplicate_of = <lead original>
+
+¿Por qué?
+
+Porque fusionar automáticamente puede eliminar información válida:
+
+lead A → implantes
+lead B → ortodoncia
+
+o:
+
+lead A → Madrid
+lead B → Valencia
+
+Además, el sistema conserva la trazabilidad original.
+
+⸻
+
+20. Normalización del teléfono
+
+El teléfono se almacenará en dos formatos:
+
+phone
+
+para presentación.
+
+y:
+
+phone_normalized
+
+para comparación.
+
+Ejemplo:
+
++34 612 345 678
+
+y:
+
+612345678
+
+se normalizan al mismo valor lógico.
+
+No debemos considerar el teléfono escrito por el usuario como suficiente para detectar duplicados.
+
+⸻
+
+21. Tabla notes
+
+notes
+-----
+id uuid PK
+lead_id uuid FK
+text text
+type enum
+created_at timestamptz
+created_by uuid
+metadata jsonb
+
+Tipos:
+
+llamada
+mensaje
+mensaje_generado_ia
+
+La tabla sigue exactamente el concepto solicitado por el documento. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+22. Las notas deben ser append-only
+
+No permitiría editar o borrar notas en el MVP.
+
+Por tanto:
+
+Lead
+ ├── llamada 09:30
+ ├── mensaje 11:00
+ ├── llamada 16:30
+ └── IA 18:00
+
+Se trata como historial.
+
+Esto mejora muchísimo la trazabilidad y evita:
+
+“¿Quién cambió esta nota?”
+
+Si alguien se equivoca:
+
+Nota nueva:
+"Corrección de la nota anterior..."
+
+⸻
+
+23. Auditoría
+
+Aquí recomiendo una de las mejoras más importantes respecto al mínimo del PDF.
+
+Crear:
+
+audit_log
+---------
+id uuid PK
+actor_user_id uuid
+action text
+entity_type text
+entity_id uuid
+old_values jsonb
+new_values jsonb
+metadata jsonb
+created_at timestamptz
+
+Ejemplos:
+
+LEAD_CREATED
+LEAD_UPDATED
+LEAD_DELETED
+NOTE_CREATED
+LEAD_STATUS_CHANGED
+LEAD_CLINIC_CHANGED
+AI_FOLLOWUP_REQUESTED
+AI_FOLLOWUP_GENERATED
+AI_FOLLOWUP_FAILED
+USER_CREATED
+USER_DEACTIVATED
+
+⸻
+
+24. Auditabilidad real
+
+La auditoría no debe depender solamente de que el frontend recuerde crear un log.
+
+Idealmente:
+
+UI
+ │
+ ▼
+Server Action
+ │
+ ├── DB change
+ │
+ └── audit entry
+
+El cambio de datos y el registro deben ejecutarse de manera atómica siempre que sea posible.
+
+En operaciones críticas podemos usar transacción.
+
+⸻
+
+25. Borrado de leads
+
+El PDF exige poder eliminar leads. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Pero dado que queremos trazabilidad, recomiendo:
+
+Soft delete
+
+Añadir:
+
+deleted_at
+deleted_by
+
+y no eliminar físicamente el registro.
+
+Desde la interfaz:
+
+Eliminar lead
+
+produce:
+
+deleted_at = NOW()
+
+y desaparece del listado normal.
+
+La auditoría conserva:
+
+LEAD_DELETED
+
+Esto es más apropiado para un CRM real.
+
+⸻
+
+26. Ficha del lead
+
+Será la pantalla más importante.
+
+Estructura:
+
+← Volver a leads
+Juan García                         [Editar]
++34 612 345 678
+┌──────────────────────────────────┐
+│ Madrid                           │
+│ Implantes                        │
+│ Instagram                        │
+│ Contactado                       │
+└──────────────────────────────────┘
+SEGUIMIENTO
+09 SEP
+Llamada
+"No responde. Intentar mañana."
+10 SEP
+Mensaje
+"Se envió información..."
+11 SEP
+IA
+"Hola Juan, queríamos..."
+[ Generar mensaje de seguimiento ]
+
+⸻
+
+27. Generador de WhatsApp con IA
+
+Este será el punto de mayor interés técnico.
+
+Flujo:
+
+Usuario
+  │
+  ▼
+Generar mensaje
+  │
+  ▼
+Server Action / API
+  │
+  ├── comprobar autenticación
+  ├── comprobar permisos
+  ├── leer lead
+  ├── leer contexto
+  ├── generar request_id
+  │
+  ▼
+OpenAI
+  │
+  ▼
+respuesta
+  │
+  ├── guardar nota
+  └── guardar auditoría
+
+La prueba exige que la llamada a OpenAI/Claude sea real y que el resultado quede guardado como nota para revisión humana. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+28. Human-in-the-loop
+
+No implementaría:
+
+IA → WhatsApp
+
+Implementaría:
+
+IA
+ │
+ ▼
+Borrador
+ │
+ ▼
+Humano revisa
+ │
+ ▼
+Humano copia/envía
+
+Esto coincide directamente con el brief, donde solicitan que el sistema sugiera el mensaje y que el equipo lo revise antes de enviarlo. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Además, encaja con la filosofía pública de DelegIA de mantener supervisión humana donde aporta criterio. 
+
+⸻
+
+29. Modelo IA
+
+La elección para el MVP será:
+
+gpt-5.6-luna
+
+manteniendo el modelo configurable mediante:
+
+OPENAI_MODEL=gpt-5.6-luna
+
+La documentación actual de OpenAI presenta GPT-5.6 Luna específicamente como modelo optimizado para cargas de trabajo sensibles al coste, con:
+
+Input:  $0.20 / 1M tokens
+Output: $1.20 / 1M tokens
+
+y soporte para Responses API. 
+
+Para este caso es una elección excelente porque generar un WhatsApp personalizado necesita muy poco contexto y poca salida.
+
+⸻
+
+30. Estimación de coste IA
+
+Supongamos por ejemplo:
+
+1000 tokens entrada
+300 tokens salida
+
+Coste aproximado:
+
+1000 × $0.20 / 1M = $0.00020
+300 × $1.20 / 1M = $0.00036
+--------------------------------
+≈ $0.00056 / generación
+
+Incluso:
+
+10.000 generaciones
+≈ $5.60
+
+Esto hace innecesario utilizar un modelo inferior sólo por coste.
+
+⸻
+
+31. Prompt
+
+El prompt debe estar versionado en código.
+
+Por ejemplo:
+
+SYSTEM_PROMPT_VERSION=1.0
+
+Rol:
+
+asistente de seguimiento comercial para una clínica dental.
+
+Reglas:
+
+- Escribe en español.
+- Tono cercano y profesional.
+- Ser breve.
+- No hacer diagnósticos.
+- No proporcionar recomendaciones médicas.
+- No inventar descuentos.
+- No inventar disponibilidad.
+- No afirmar que una cita está reservada.
+- No utilizar información que no esté presente.
+- Adaptar el mensaje al estado del lead.
+- Adaptar el mensaje al tratamiento.
+- El mensaje debe sonar humano.
+- Debe ser adecuado para WhatsApp.
+
+⸻
+
+32. Contexto enviado al modelo
+
+No enviar toda la base de datos.
+
+Sólo:
+
+{
+  "nombre": "Juan",
+  "clinica": "Madrid",
+  "tratamiento": "implantes",
+  "estado": "contactado",
+  "ultima_interaccion": "Nos pidió información sobre financiación"
+}
+
+Y como máximo las últimas notas relevantes.
+
+Esto reduce:
+
+* coste;
+* latencia;
+* riesgo;
+* ruido.
+
+⸻
+
+33. Respuesta estructurada
+
+La IA no debe devolver texto arbitrario que después el backend tenga que interpretar.
+
+Idealmente:
+
+{
+  "message": "Hola Juan..."
+}
+
+Validado mediante schema.
+
+El backend comprobará:
+
+message: string
+
+y rechazará cualquier respuesta inválida.
+
+⸻
+
+34. Qué guardar de la IA
+
+En notes:
+
+text
+type = mensaje_generado_ia
+
+Y en metadata:
+
+{
+  "model": "gpt-5.6-luna",
+  "prompt_version": "1.0",
+  "request_id": "...",
+  "generated_at": "...",
+  "latency_ms": 842
+}
+
+No guardar el prompt completo en la auditoría.
+
+Esto proporciona:
+
+qué modelo
+qué versión
+cuándo
+qué operación
+qué resultado
+
+sin llenar la auditoría de información redundante.
+
+⸻
+
+35. Seguridad de OpenAI
+
+La clave:
+
+OPENAI_API_KEY
+
+jamás aparecerá en el frontend.
+
+La llamada será:
+
+Browser
+   │
+   ▼
+Next.js server
+   │
+   ▼
+OpenAI
+
+Nunca:
+
+Browser
+   │
+   ▼
+OpenAI
+
+La clave quedará en variables privadas de Vercel.
+
+⸻
+
+36. Privacidad
+
+Aquí hay una cuestión especialmente importante.
+
+Aunque el ejercicio utiliza un cliente ficticio, un CRM de una clínica dental podría tratar información relacionada con salud. La AEPD considera los datos relativos a la salud una categoría especialmente protegida y el artículo 9 RGPD establece restricciones específicas sobre su tratamiento. 
+
+Por ello diseñaremos el MVP siguiendo minimización de datos:
+
+No almacenar:
+
+* historia clínica;
+* diagnósticos;
+* radiografías;
+* enfermedades;
+* medicación;
+* información clínica no necesaria.
+
+Sólo:
+
+nombre
+teléfono
+clínica
+tratamiento de interés
+fuente
+estado
+seguimiento comercial
+
+Y las notas deberán ser de naturaleza comercial/operativa.
+
+En el README dejaría claro que una versión productiva requeriría revisión jurídica, política de conservación, base legitimadora, encargados de tratamiento y medidas de seguridad adecuadas.
+
+⸻
+
+37. RLS
+
+La autorización debe existir también en PostgreSQL.
+
+Ejemplo conceptual:
+
+ADMIN
+   ↓
+todos los leads
+MANAGER
+   ↓
+leads de clínicas asignadas
+RECEPTIONIST
+   ↓
+leads de su clínica
+
+Nunca confiar:
+
+if (user.role === ...)
+
+únicamente en React.
+
+Eso sólo controla UI.
+
+La seguridad real:
+
+Supabase Auth
+      +
+RLS
+      +
+Server-side authorization
+
+Supabase recomienda expresamente combinar Auth con RLS para proteger datos de extremo a extremo. 
+
+⸻
+
+38. Filtros
+
+El listado tendrá:
+
+Buscar...
+
+y filtros:
+
+Clínica
+[ Todas ▼ ]
+Estado
+[ Todos ▼ ]
+Tratamiento
+[ Todos ▼ ]
+Fuente
+[ Todas ▼ ]
+
+Además:
+
+Ordenar por:
+- Más recientes
+- Última actividad
+- Más antiguos
+
+La prueba sólo exige al menos clínica o estado, pero implementar ambos es obligatorio en nuestro MVP.
+
+⸻
+
+39. Priorización visual
+
+Añadiría una propiedad derivada:
+
+requires_attention
+
+No necesariamente en la base de datos.
+
+Ejemplo:
+
+Nuevo + implantes
+
+tiene mayor prioridad visual que:
+
+Cliente + revisión
+
+Esto ataca directamente uno de los problemas del brief:
+
+los tratamientos de alto valor, especialmente implantes, se enfrían porque tardan días en contactar. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+No añadiría todavía un algoritmo complejo.
+
+MVP:
+
+implantes + nuevo
+→ prioridad alta
+
+⸻
+
+40. Dashboard MVP
+
+Quedaría muy sencillo:
+
+Buenos días, Ana
+Resumen
+┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
+│ 24         │ │ 8          │ │ 5          │ │ 3          │
+│ Leads      │ │ Nuevos     │ │ Citas      │ │ Implantes  │
+└────────────┘ └────────────┘ └────────────┘ └────────────┘
+
+Después:
+
+Leads recientes
+Juan García       Madrid      Implantes    Nuevo
+María López       Valencia    Ortodoncia   Contactado
+...
+
+Y:
+
+Necesitan seguimiento
+3 leads pendientes
+
+⸻
+
+41. Arquitectura de componentes
+
+Propuesta:
+
+components/
+├── ui/
+├── layout/
+│   ├── sidebar.tsx
+│   ├── header.tsx
+│   └── user-menu.tsx
+│
+├── leads/
+│   ├── lead-table.tsx
+│   ├── lead-card.tsx
+│   ├── lead-form.tsx
+│   ├── lead-filters.tsx
+│   ├── lead-status-badge.tsx
+│   └── lead-clinic-badge.tsx
+│
+├── notes/
+│   ├── note-list.tsx
+│   ├── note-item.tsx
+│   └── note-form.tsx
+│
+├── ai/
+│   ├── generate-followup-button.tsx
+│   ├── generated-message.tsx
+│   └── ai-loading-state.tsx
+│
+└── dashboard/
+    ├── stats-card.tsx
+    └── recent-leads.tsx
+
+⸻
+
+42. Lógica de dominio
+
+No meter la lógica directamente dentro de las páginas.
+
+Crear:
+
+lib/
+├── auth/
+├── leads/
+├── notes/
+├── ai/
+├── audit/
+├── permissions/
+├── validation/
+└── supabase/
+
+Ejemplo:
+
+lib/leads/create-lead.ts
+lib/leads/update-lead.ts
+lib/leads/delete-lead.ts
+lib/leads/find-duplicates.ts
+
+Esto permitirá que Codex trabaje módulo por módulo sin producir un fichero gigantesco.
+
+⸻
+
+43. Validación
+
+Usaría Zod para definir contratos.
+
+Ejemplo conceptual:
+
+const createLeadSchema = z.object({
+  name: z.string().min(2).max(120),
+  phone: z.string().min(7).max(30),
+  clinicId: z.string().uuid(),
+  treatment: z.enum([...]),
+  source: z.enum([...]),
+  status: z.enum([...])
+})
+
+Así tenemos:
+
+Frontend validation
++
+Server validation
++
+Database constraints
+
+⸻
+
+44. Gestión de errores
+
+Nunca:
+
+Error: Something went wrong
+
+Mostrar:
+
+No se ha podido guardar el lead.
+Comprueba los datos e inténtalo de nuevo.
+
+Para IA:
+
+No se ha podido generar el mensaje.
+El lead no se ha modificado.
+
+Esto último es importante.
+
+Una generación fallida no debe producir un registro de nota falso.
+
+⸻
+
+45. Estados de loading
+
+La aplicación debe mostrar siempre feedback:
+
+Guardando...
+Generando...
+Eliminando...
+
+Botones deshabilitados durante operaciones.
+
+También hay que proteger contra:
+
+double click
+
+por ejemplo:
+
+Generar mensaje
+Generating...
+
+Esto evita dos llamadas simultáneas.
+
+⸻
+
+46. Idempotencia de IA
+
+Cada generación tendrá:
+
+request_id UUID
+
+Esto permite que una repetición accidental no cree dos notas iguales.
+
+Por ejemplo:
+
+AI_FOLLOWUP_REQUESTED
+AI_FOLLOWUP_GENERATED
+
+con:
+
+request_id = 7e...
+
+Y podemos establecer una restricción lógica para evitar duplicados de una misma operación.
+
+⸻
+
+47. Auditoría mediante triggers + aplicación
+
+Para los cambios de datos principales utilizaría:
+
+Application audit
++
+Database protection
+
+La aplicación registra la operación porque conoce:
+
+usuario
+acción
+contexto
+
+Las restricciones de DB garantizan integridad.
+
+No complicaría inicialmente la infraestructura con PostgreSQL logical decoding, pgaudit o sistemas externos.
+
+⸻
+
+48. Segunda fase: mejoras de producto
+
+Aquí es donde buscaría diferenciar la candidatura.
+
+No metería estas funcionalidades en el MVP.
+
+Primero:
+
+MVP terminado
+↓
+datos reales / simulados
+↓
+problemas observados
+↓
+mejoras
+
+⸻
+
+49. Mejora 1 - Próximo seguimiento
+
+Añadir:
+
+next_follow_up_at
+
+y:
+
+assigned_to
+
+Entonces:
+
+Juan García
+Implantes
+Contactado
+Próximo seguimiento:
+Hoy · 16:30
+
+Y el dashboard:
+
+12 seguimientos pendientes
+
+Esto convierte el CRM en una herramienta realmente operacional.
+
+⸻
+
+50. Mejora 2 - Automatización
+
+DelegIA está muy enfocada a agentes y automatización de procesos. 
+
+Podemos evolucionar:
+
+Lead nuevo
+   ↓
+clasificación
+   ↓
+priorización
+   ↓
+seguimiento recomendado
+   ↓
+humano revisa
+
+Nunca empezaría directamente con un agente autónomo.
+
+⸻
+
+51. Mejora 3 - IA más inteligente
+
+Fase 2:
+
+"¿Qué debería hacer hoy?"
+
+La IA analiza:
+
+* leads nuevos;
+* estado;
+* días sin contacto;
+* tratamiento;
+* últimas notas.
+
+Y devuelve:
+
+Hoy deberías priorizar:
+1. Juan - implantes - 3 días sin contacto
+2. Ana - implantes - nuevo
+3. Laura - ortodoncia - cita pendiente
+
+Esto es mucho más interesante que simplemente añadir otro botón de chatbot.
+
+⸻
+
+52. Mejora 4 - análisis de conversión
+
+Dashboard:
+
+Leads
+   ↓
+Contactados
+   ↓
+Citas
+   ↓
+Clientes
+
+Por clínica:
+
+Madrid      42%
+Valencia    37%
+Sevilla     48%
+
+Por fuente:
+
+Instagram   31%
+Web         42%
+Llamadas    56%
+
+Por tratamiento:
+
+Implantes       48%
+Ortodoncia      38%
+Estética        33%
+Revisión        61%
+
+Aquí empiezamos a transformar CRM en sistema de decisión empresarial.
+
+⸻
+
+53. Mejora 5 - deduplicación inteligente
+
+En fase 2:
+
++34 612 345 678
+     +
+Juan García
+
+podrían alimentar un detector con:
+
+* teléfono;
+* nombre;
+* clínica;
+* similitud.
+
+Pero siempre:
+
+IA detecta
+     ↓
+humano decide
+
+Nunca merge automático.
+
+⸻
+
+54. Mejora 6 - importación de Excel
+
+Este caso de uso sale directamente del problema original.
+
+La clínica actualmente trabaja con:
+
+Excel compartido por email
+
+DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Una funcionalidad futura extremadamente valiosa sería:
+
+Importar Excel
+       ↓
+validar
+       ↓
+detectar duplicados
+       ↓
+previsualizar
+       ↓
+importar
+
+Incluso permitir:
+
+"Importados 327 leads.
+15 posibles duplicados.
+3 registros inválidos."
+
+⸻
+
+55. Mejora 7 - integraciones
+
+Posteriormente:
+
+Instagram Ads
+Web form
+WhatsApp
+Email
+Telefonía
+
+podrían alimentar:
+
+              ┌── Instagram
+              ├── Web
+              ├── WhatsApp
+              └── Llamadas
+                    │
+                    ▼
+                Lead API
+                    │
+                    ▼
+                   CRM
+
+Esto conecta perfectamente con el enfoque de integración de sistemas de DelegIA. 
+
+⸻
+
+56. Qué NO construiría en fase 2
+
+Para mantener foco:
+
+* facturación;
+* historia clínica;
+* agenda médica completa;
+* videollamadas;
+* ecommerce;
+* chatbot externo;
+* app móvil;
+* WhatsApp automático sin supervisión;
+* RAG;
+* agente autónomo con permisos de escritura ilimitados.
+
+Todo eso aleja el proyecto del objetivo original.
+
+⸻
+
+57. Estrategia de desarrollo con Codex
+
+Aquí podemos sacar muchísimo rendimiento.
+
+No pediría a Codex:
+
+“Construye toda la aplicación.”
+
+Eso genera riesgo de:
+
+* arquitectura incoherente;
+* código duplicado;
+* tests pobres;
+* decisiones inconsistentes.
+
+Utilizaremos:
+
+Informe arquitectura
+        ↓
+Roadmap
+        ↓
+Fases
+        ↓
+Tickets
+        ↓
+Codex
+        ↓
+Tests
+        ↓
+Commit
+
+⸻
+
+58. Regla principal para Codex
+
+Cada tarea debe tener:
+
+Objetivo
+Contexto
+Archivos permitidos
+Cambios esperados
+Restricciones
+Tests
+Criterios de aceptación
+
+Ejemplo:
+
+Implementa la migración inicial de Supabase.
+NO:
+- modificar componentes React
+- implementar Auth
+- crear datos ficticios
+SÍ:
+- crear clinics
+- crear profiles
+- crear user_clinics
+- crear leads
+- crear notes
+- crear audit_log
+- crear enums
+- añadir índices
+- añadir RLS
+
+⸻
+
+59. Workflow Git
+
+No trabajar directamente sobre main.
+
+main
+ │
+ ├── feat/project-bootstrap
+ ├── feat/database
+ ├── feat/auth
+ ├── feat/leads
+ ├── feat/notes
+ ├── feat/ai-followup
+ ├── feat/audit
+ └── feat/dashboard
+
+Cada fase:
+
+implementación
+   ↓
+tests
+   ↓
+review
+   ↓
+commit
+
+⸻
+
+60. Convención de commits
+
+Por ejemplo:
+
+chore: bootstrap Next.js application
+feat(db): add initial CRM schema
+feat(auth): add Supabase authentication
+feat(leads): implement lead CRUD
+feat(notes): add lead activity timeline
+feat(ai): generate follow-up messages with OpenAI
+feat(audit): record lead mutations
+feat(ui): add clinic visual identity
+feat(dashboard): add pipeline overview
+test(leads): add CRUD and permission coverage
+test(ai): cover follow-up generation
+
+Esto es especialmente importante porque DelegIA solicita expresamente que el repositorio Git tenga el historial de commits visible. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+61. Testing
+
+No necesitamos 500 tests.
+
+Necesitamos tests relevantes.
+
+Unitarios
+
+* normalización teléfono;
+* duplicate detection;
+* validadores;
+* permisos;
+* construcción prompt;
+* parsing respuesta IA.
+
+Integración
+
+* crear lead;
+* actualizar;
+* borrar;
+* crear nota;
+* permisos;
+* RLS.
+
+E2E
+
+Playwright:
+
+login
+↓
+dashboard
+↓
+crear lead
+↓
+abrir lead
+↓
+añadir nota
+↓
+generar IA
+↓
+editar lead
+↓
+borrar lead
+
+Precisamente esa secuencia coincide muy bien con la demostración que DelegIA solicita en el Loom: crear, generar con IA, editar y borrar. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+62. Seed de demo
+
+Necesitamos datos preparados para el Loom.
+
+Por ejemplo:
+
+15 leads
+Madrid:
+5
+Valencia:
+5
+Sevilla:
+5
+
+Distribuidos entre:
+
+Implantes
+Ortodoncia
+Estética
+Revisión
+
+y estados:
+
+Nuevo
+Contactado
+Cita
+No interesado
+Cliente
+
+Además:
+
+2 duplicados detectables
+
+y varias notas.
+
+Así la aplicación no parece vacía durante la presentación.
+
+⸻
+
+63. Usuarios demo
+
+Sólo dos serían suficientes para satisfacer el brief, pero propongo tres:
+
+admin@vitalis.demo
+manager@vitalis.demo
+recepcion@vitalis.demo
+
+Por ejemplo:
+
+ADMIN
+→ todas las clínicas
+MANAGER
+→ Madrid + Valencia
+RECEPTIONIST
+→ Madrid
+
+Esto permite demostrar rápidamente el sistema de permisos.
+
+⸻
+
+64. Seguridad adicional
+
+Aplicaremos:
+
+Supabase Auth
++
+RLS
++
+Server-side authorization
++
+Zod
++
+HTTP security headers
++
+No secrets in client
++
+Audit log
++
+Soft delete
+
+Y además:
+
+rate limiting
+
+para el endpoint de IA.
+
+El rate limit no necesita ser sofisticado:
+
+10 generaciones/minuto/usuario
+
+es más que suficiente para el MVP.
+
+⸻
+
+65. Configuración
+
+Todo lo que pueda cambiarse debe configurarse.
+
+.env.example:
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.6-luna
+NEXT_PUBLIC_APP_URL=
+
+Nunca:
+
+OPENAI_API_KEY
+
+con prefijo:
+
+NEXT_PUBLIC_
+
+⸻
+
+66. Arquitectura definitiva
+
+La representación que utilizaría incluso en el README y el Loom:
+
+                         ┌───────────────────┐
+                         │      Usuario      │
+                         │ Recepción / Admin  │
+                         └─────────┬─────────┘
+                                   │ HTTPS
+                                   ▼
+                         ┌───────────────────┐
+                         │      Vercel       │
+                         │     Next.js       │
+                         ├───────────────────┤
+                         │ UI / App Router   │
+                         │ Server Actions    │
+                         │ Route Handlers    │
+                         └──────┬─────┬──────┘
+                                │     │
+                ┌───────────────┘     └──────────────┐
+                ▼                                    ▼
+       ┌─────────────────┐                  ┌─────────────────┐
+       │ Supabase Auth   │                  │   OpenAI API    │
+       │                 │                  │ GPT-5.6 Luna    │
+       └────────┬────────┘                  └─────────────────┘
+                │
+                ▼
+       ┌─────────────────┐
+       │ Supabase        │
+       │ PostgreSQL      │
+       ├─────────────────┤
+       │ clinics         │
+       │ profiles        │
+       │ user_clinics    │
+       │ leads           │
+       │ notes           │
+       │ audit_log       │
+       ├─────────────────┤
+       │ RLS             │
+       └─────────────────┘
+
+⸻
+
+67. Estructura de navegación final
+
+/dashboard
+/leads
+/leads/new
+/leads/[id]
+/settings
+/settings/users
+/settings/clinics
+/settings/audit
+
+El MVP podría incluso ocultar:
+
+/settings/audit
+
+para recepcionistas.
+
+⸻
+
+68. MVP exacto
+
+El MVP queda oficialmente definido como:
+
+Autenticación
+
+* Supabase Auth.
+* Login.
+* Logout.
+* usuarios internos.
+* roles.
+
+CRM
+
+* listado leads;
+* búsqueda;
+* filtros;
+* crear;
+* editar;
+* eliminar;
+* detalle.
+
+Seguimiento
+
+* añadir notas;
+* timeline;
+* tipo de interacción.
+
+IA
+
+* botón;
+* OpenAI real;
+* GPT-5.6 Luna;
+* mensaje WhatsApp;
+* guardar como nota IA.
+
+Clínicas
+
+* Madrid;
+* Valencia;
+* Sevilla;
+* identidad visual;
+* permisos por clínica.
+
+Datos
+
+* PostgreSQL;
+* RLS;
+* índices;
+* constraints.
+
+Seguridad
+
+* secrets server-side;
+* authorization;
+* audit log;
+* soft delete.
+
+Producción
+
+* GitHub;
+* Vercel;
+* delegia.carlosrevert.es.
+
+⸻
+
+69. Qué quedará fuera del MVP
+
+Explícitamente:
+
+WhatsApp real
+Instagram API
+formularios públicos
+email automático
+agenda
+notificaciones
+importación Excel
+analytics avanzado
+automatizaciones
+agentes autónomos
+
+Esto es importante porque el documento de la prueba establece que el objetivo es un MVP funcional y no una solución empresarial completa. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+70. Roadmap de 7 días
+
+La propia prueba establece:
+
+Día 0
+Día 3-4 → update
+Día 7 → entrega
+
+y exige URL, GitHub, Loom de 10 minutos y README. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Mi planificación sería:
+
+Día	Objetivo
+0	arquitectura + repo + Supabase
+1	schema + Auth + RLS
+2	CRUD leads + UI
+3	notas + detalle + update DelegIA
+4	IA + auditoría
+5	dashboard + permisos + UX
+6	testing + bugs + producción
+7	hardening + README + Loom + entrega
+
+⸻
+
+71. Día 0
+
+Resultado esperado:
+
+repo creado
+Next.js funcionando
+Supabase creado
+Vercel conectado
+dominio preparado
+schema diseñado
+README iniciado
+
+No dedicaría tiempo todavía a pulir UI.
+
+⸻
+
+72. Día 1
+
+Objetivo:
+
+Base de datos + Auth
+
+Debe terminar con:
+
+login funcionando
+RLS funcionando
+usuarios demo
+clinics seed
+
+No pasar a CRUD hasta que esto sea sólido.
+
+⸻
+
+73. Día 2
+
+Objetivo:
+
+Lead CRUD completo
+
+Debe poder hacerse:
+
+crear
+editar
+ver
+filtrar
+eliminar
+
+Esto ya satisface gran parte del núcleo de la prueba.
+
+⸻
+
+74. Día 3
+
+Objetivo:
+
+Lead detail + timeline
+
+Y se manda el update obligatorio:
+
+Hecho:
+- Auth
+- DB
+- CRUD
+- X
+Falta:
+- IA
+- auditoría
+- hardening
+Bloqueos:
+- ninguno
+
+Esto responde exactamente al formato de trabajo que DelegIA pide. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+75. Día 4
+
+Objetivo:
+
+OpenAI
++
+notes
++
+audit
+
+Al acabar este día:
+
+crear lead
+→ editar
+→ añadir nota
+→ generar IA
+→ guardar IA
+
+El producto ya debería ser demostrable.
+
+⸻
+
+76. Día 5
+
+Aquí entra la calidad visual:
+
+* sidebar;
+* dashboard;
+* badges;
+* clínica;
+* responsive;
+* estados;
+* loading;
+* empty states;
+* confirmaciones.
+
+La prueba explícitamente dice que el foco no está en pixel-perfect, sino en que funcione realmente. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+Por eso esta parte viene después de funcionalidad.
+
+⸻
+
+77. Día 6
+
+Sólo:
+
+testing
+security
+bugs
+deployment
+
+No introducir funcionalidades nuevas.
+
+⸻
+
+78. Día 7
+
+Día de congelación.
+
+NO FEATURES
+
+Sólo:
+
+* pruebas;
+* documentación;
+* revisión;
+* demo data;
+* Loom;
+* README;
+* producción.
+
+⸻
+
+79. Loom
+
+La demo debería estar guionizada para demostrar exactamente el producto.
+
+Minuto 0-1
+
+Problema:
+
+“Vitalis tenía leads procedentes de tres canales y una gestión mediante Excel compartido.”
+
+Minuto 1-2
+
+Arquitectura:
+
+Next.js
+Supabase
+Vercel
+OpenAI
+
+Minuto 2-4
+
+Login + dashboard.
+
+Minuto 4-6
+
+Crear lead.
+
+Minuto 6-7
+
+Añadir llamada.
+
+Minuto 7-8
+
+Generar mensaje IA.
+
+Minuto 8-9
+
+Editar lead.
+
+Minuto 9-10
+
+Eliminar lead + explicar auditoría.
+
+La propia prueba exige una demostración real de crear, generar con IA, editar y borrar. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+80. README
+
+Aunque la prueba pide un README de una página, el repositorio puede contener documentación técnica adicional.
+
+El README visible debería tener:
+
+# Clínica Dental Vitalis
+## Qué hace
+## Stack
+## Decisiones de producto
+- Clínica editable
+- Duplicados
+- Permisos
+- Tono IA
+## Arquitectura
+## Demo
+## Despliegue
+## Qué haría con más tiempo
+
+La prueba pide específicamente documentar las decisiones tomadas sobre los huecos del brief y qué se haría diferente con más tiempo. DelegIA_Prueba_Tecnica_weasy2_1.pdf
+
+⸻
+
+81. Decisiones que quedan cerradas
+
+Esta es la tabla que considero más importante del informe:
+
+Decisión	Decisión final
+¿Clínica editable?	Sí
+¿Conservar clínica original?	Sí
+¿Duplicados automáticos?	Detectar + avisar
+¿Fusionar automáticamente?	No
+¿Todo el equipo ve todo?	No
+¿Admin ve todo?	Sí
+¿Recepcionista ve su clínica?	Sí
+¿Manager?	Clínicas asignadas
+¿Notas editables?	No, append-only
+¿Eliminar físicamente?	No, soft delete
+¿IA automática?	No
+¿Humano revisa?	Sí
+¿Tono IA?	Cercano + profesional
+¿Modelo?	GPT-5.6 Luna
+¿API?	OpenAI Responses API
+¿Backend?	Next.js server-side
+¿DB?	Supabase PostgreSQL
+¿Seguridad?	Auth + RLS + server auth
+¿Auditoría?	Sí
+¿Hosting?	Vercel
+¿Dominio?	delegia.carlosrevert.es
+
+⸻
+
+82. La estrategia global que recomiendo
+
+La clave es que el proyecto tenga tres niveles:
+
+Nivel 1 - Lo que DelegIA pidió
+
+Login
++
+Supabase
++
+CRUD
++
+Notas
++
+IA
++
+Vercel
+
+Nivel 2 - Lo que demuestra criterio de ingeniería
+
+RLS
++
+roles
++
+permisos
++
+soft delete
++
+auditoría
++
+validación
++
+tests
+
+Nivel 3 - Lo que demuestra visión de producto DelegIA
+
+pipeline
++
+priorización
++
+seguimientos
++
+analytics
++
+automatización
++
+human-in-the-loop
+
+Y sólo el primer y segundo nivel deben quedar completamente cerrados dentro del MVP. El tercero se presenta como evolución razonada.
+
+⸻
+
+83. Conclusión
+
+Mi recomendación es no construir un “CRM bonito”, sino presentar el proyecto como:
+
+un sistema operativo comercial interno para una clínica dental, con un pipeline de leads, trazabilidad completa y asistencia de IA supervisada por humanos.
+
+Eso conecta de forma mucho más directa con la forma en que DelegIA describe sus propios proyectos: sistemas internos personalizados, seguimiento comercial, agentes IA, automatización, datos accionables y supervisión humana. 
+
+Además, la arquitectura aprovecha exactamente el stack solicitado por la prueba:
+
+Next.js
+Supabase
+Vercel
+OpenAI
+
+y evita introducir complejidad innecesaria.
+
+Este informe debería convertirse ahora en el documento maestro del proyecto. El siguiente artefacto que tiene sentido generar es el roadmap técnico de implementación para Codex, dividido en fases pequeñas, con tareas, archivos, criterios de aceptación, tests y commits, de forma que podamos ejecutarlo directamente dentro de:
+
+DelegIA/ClinicaDental
