@@ -67,9 +67,11 @@ El Informe Maestro establece explícitamente este enfoque y prioriza producto + 
 | Tests E2E | Playwright |
 | Control de versiones | Git + GitHub |
 | Observabilidad | logs estructurados + `audit_log` |
-| Dominio objetivo | `delegia.carlosrevert.es` |
+| Dominio objetivo | `crmleads.carlosrevert.es` |
 
-Estas decisiones proceden directamente del stack definitivo del Informe Maestro. 
+Estas decisiones proceden directamente del stack definitivo del Informe
+Maestro, salvo el dominio de presentación, actualizado a
+`crmleads.carlosrevert.es` para identificar mejor el producto en portfolio.
 
 ## 1.3 Arquitectura de ejecución
 
@@ -1800,6 +1802,20 @@ Configurar un proyecto Supabase local o válido, cargar fixtures de demo y
 ejecutar el E2E del dashboard con los tres roles. La fase debe permanecer
 pendiente hasta completar esa validación.
 
+### Configuración real acordada — 2026-09-07
+
+- El dominio de presentación elegido para este CRM es
+  `https://crmleads.carlosrevert.es`, más descriptivo que el dominio paraguas
+  `delegia.carlosrevert.es`.
+- El proyecto remoto Supabase aún requiere ser creado o identificado. Las keys
+  reales se mantendrán sólo en `.env`/Vercel y nunca en el repositorio,
+  roadmap, logs o mensajes.
+- Para habilitar las pruebas hay que aplicar las migraciones y el seed
+  estructural, definir `DEMO_USER_PASSWORD` localmente y ejecutar
+  `npm run demo:users`.
+- Antes de publicar, Vercel debe asignar el destino CNAME exacto para el
+  subdominio y ese valor se añadirá en el proveedor DNS de `carlosrevert.es`.
+
 ---
 
 # FASE 10 — Settings y control de administración
@@ -2115,7 +2131,7 @@ El Informe Maestro propone exactamente un dataset de 15 leads, cinco por clínic
 
 ## Task F14-T02: Configurar dominio
 
-- **Task [F14-T02]:** Publicar `delegia.carlosrevert.es`
+- **Task [F14-T02]:** Publicar `crmleads.carlosrevert.es`
 - **Objetivo:** Proporcionar la URL final exigida.
 - **Archivos afectados:** documentación/configuración de deployment
 - **Instrucciones para el Agente:**
@@ -2126,13 +2142,15 @@ El Informe Maestro propone exactamente un dataset de 15 leads, cinco por clínic
 - **Restricciones:**
   - No cambiar arquitectura.
 - **Criterios de Aceptación:**
-  - `https://delegia.carlosrevert.es` responde.
+  - `https://crmleads.carlosrevert.es` responde.
   - HTTPS válido.
   - Login funciona mediante dominio final.
 - **Testing / Validación:** Navegador + curl/HTTP smoke test.
 - **Commit:** `chore(deploy): configure Vitalis production domain`
 
-La URL de producción definida por el Informe Maestro es `https://delegia.carlosrevert.es`. 
+La URL de producción del Informe Maestro se sustituye para este CRM por
+`https://crmleads.carlosrevert.es`, decisión registrada en la configuración
+real de la Fase 9.
 
 ---
 
@@ -2601,7 +2619,7 @@ Este recorrido debe pasar completamente antes de considerar el MVP terminado. El
 - [ ] Supabase Production conectado.
 - [ ] OpenAI Production conectado.
 - [ ] HTTPS.
-- [ ] `delegia.carlosrevert.es`.
+- [ ] `crmleads.carlosrevert.es`.
 - [ ] login real.
 - [ ] CRUD real.
 - [ ] IA real.

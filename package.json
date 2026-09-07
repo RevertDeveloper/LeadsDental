@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "demo:users": "tsx scripts/seed-demo-users.ts",
+    "demo:users": "node --env-file=.env --import tsx scripts/seed-demo-users.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

@@ -23,13 +23,21 @@ control de administración.
 
 ```bash
 npm ci
-cp .env.example .env.local
+cp .env.example .env
 npm run dev
 ```
 
-Edita `.env.local` con los valores del proyecto Supabase. Las claves de
+Edita `.env` con los valores del proyecto Supabase. Las claves de
 Supabase service role y OpenAI son sólo server-side y nunca deben usar el
-prefijo `NEXT_PUBLIC_`.
+prefijo `NEXT_PUBLIC_`. Para provisionar los tres usuarios demo también debes
+definir `DEMO_USER_PASSWORD` localmente con 12 caracteres o más; nunca se
+versiona ni se muestra en logs.
+
+Configuración remota pendiente: crea el proyecto Supabase, aplica las
+migraciones de `supabase/migrations/` y `supabase/seed.sql`, completa las
+variables reales en `.env` y ejecuta `npm run demo:users`. La URL pública
+objetivo es `https://crmleads.carlosrevert.es`; el DNS se configura cuando el
+proyecto Vercel tenga asignado su destino exacto.
 
 Comprobaciones locales:
 
