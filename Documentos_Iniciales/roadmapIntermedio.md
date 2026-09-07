@@ -1,0 +1,543 @@
+# Roadmap intermedio — Clínica Dental Vitalis
+
+Este documento reúne todos los pasos que quedan fuera del código ya
+implementado y deja preparado el camino para continuar con la Fase 13 del
+`roadmap.md`.
+
+El orden es importante:
+
+```text
+Preparar secretos y Supabase
+        ↓
+Validar RLS y E2E de la Fase 12
+        ↓
+Fase 13 — Datos demo
+        ↓
+Fase 14 — Vercel y dominio
+        ↓
+Fase 15 — Documentación y congelación
+        ↓
+Fase 16 — Entrega final
+```
+
+No marques una tarea como terminada sólo porque el código exista. Cada bloque
+incluye el resultado que debes comprobar.
+
+---
+
+## 0. Estado actual y reglas de seguridad
+
+La implementación local de la Fase 12 ya está hecha:
+
+- Vitest: 78 tests correctos.
+- TypeScript, ESLint y build de Next.js correctos.
+- Tests de integración CRUD preparados.
+- Test RLS preparado para ejecutar SQL real contra Supabase.
+- Recorrido E2E completo preparado con Playwright.
+
+La Fase 12 sigue abierta porque todavía no se ha ejecutado contra un proyecto
+Supabase real.
+
+Antes de empezar:
+
+- Nunca pegues secretos en GitHub, README, capturas, Loom o este documento.
+- No edites `.env.example` con valores reales.
+- Usa el `.env` local ignorado por Git, porque el script actual
+  `npm run demo:users` carga explícitamente ese archivo.
+- Comprueba siempre `git status` antes de hacer commit.
+- No subas `.env`, `.env.local`, contraseñas ni `test-results/`.
+
+### Atención: clave OpenAI local
+
+La revisión anterior detectó una variable `OPENAI_API_KEY` con formato de
+clave real en el `.env` local. Si esa clave es válida, revócala desde el panel
+de OpenAI y crea otra. Aunque `.env` esté ignorado y no aparezca en Git, una
+clave expuesta en un editor, log o captura debe considerarse comprometida.
+
+Después de rotarla, actualiza únicamente el `.env` local y no imprimas su
+valor en la terminal.
+
+---
+
+## 1. Crear y preparar Supabase
+
+### Qué hay que hacer
+
+Crear el proyecto PostgreSQL/Auth real que utilizará el CRM y aplicar el
+esquema, las políticas RLS y las clínicas estructurales.
+
+### Cómo hacerlo
+
+1. Entra en <https://supabase.com/dashboard> y crea un proyecto nuevo.
+2. Guarda en un lugar seguro:
+   - nombre del proyecto;
+   - región;
+   - contraseña de PostgreSQL;
+   - Project URL;
+   - anon/public key;
+   - service role key.
+3. En `Project Settings → API`, copia la URL y la anon key.
+4. En `Project Settings → Database`, copia la cadena de conexión directa de
+   PostgreSQL. Sustituye la contraseña y codifica caracteres especiales si los
+   contiene. Esa será `SUPABASE_DB_URL`.
+5. En el `.env` local, sustituye sólo los placeholders:
+
+   ```dotenv
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+   SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+   OPENAI_API_KEY=<openai-key-rotated>
+   OPENAI_MODEL=gpt-5.6-luna
+   DEMO_USER_PASSWORD=<contraseña-local-de-12-o-más-caracteres>
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   SUPABASE_DB_URL=postgresql://postgres:<password>@db.<project-ref>.supabase.co:5432/postgres
+   ```
+
+   No copies esos valores a `.env.example`.
+
+6. En Supabase, abre `SQL Editor` y ejecuta en este orden:
+
+   ```text
+   supabase/migrations/20260907120000_initial_crm_schema.sql
+   supabase/migrations/20260907120100_rls_policies.sql
+   supabase/migrations/20260907120200_ai_followup_persistence.sql
+   supabase/seed.sql
+   ```
+
+   Puedes pegar cada archivo en una consulta separada. Si usas `psql`, desde
+   la raíz del repositorio ejecuta:
+
+   ```bash
+   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \\
+     -f supabase/migrations/20260907120000_initial_crm_schema.sql
+   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \\
+     -f supabase/migrations/20260907120100_rls_policies.sql
+   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \\
+     -f supabase/migrations/20260907120200_ai_followup_persistence.sql
+   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+   ```
+
+7. En `Authentication → Providers`, confirma que el proveedor Email está
+   habilitado. Los usuarios demo se crean con email confirmado por el script,
+   por lo que no necesitas crear cuentas manualmente.
+
+### Resultado esperado
+
+- El proyecto Supabase responde.
+- Existen las tablas `clinics`, `profiles`, `user_clinics`, `leads`, `notes` y
+  `audit_log`.
+- Existen las funciones RLS y `persist_ai_followup`.
+- Existen las clínicas Madrid, Valencia y Sevilla.
+- Las variables locales dejan de contener `your-project.supabase.co` o
+  placeholders equivalentes.
+
+### Comprobación rápida
+
+```bash
+npm run typecheck
+npm test -- --run tests/config/env.test.ts tests/database/schema.test.ts
+```
+
+No muestres el contenido del `.env` para hacer esta comprobación.
+
+---
+
+## 2. Crear los usuarios demo
+
+### Qué hay que hacer
+
+Crear los tres usuarios que necesita la validación y asignarles sus clínicas.
+El script ya está implementado en `scripts/seed-demo-users.ts`.
+
+### Cómo hacerlo
+
+1. Define en `.env` una contraseña local de al menos 12 caracteres mediante
+   `DEMO_USER_PASSWORD`.
+2. Ejecuta:
+
+   ```bash
+   npm run demo:users
+   ```
+
+3. El script crea o actualiza estas cuentas:
+
+   | Cuenta | Rol | Clínicas |
+   |---|---|---|
+   | `admin@vitalis.demo` | `ADMIN` | Madrid, Valencia y Sevilla |
+   | `manager@vitalis.demo` | `CLINIC_MANAGER` | Madrid y Valencia |
+   | `recepcion@vitalis.demo` | `RECEPTIONIST` | Madrid |
+
+4. Guarda la contraseña sólo en tu gestor de contraseñas o entorno local. No
+   la escribas en el repositorio.
+
+### Resultado esperado
+
+El comando termina con `Provisionamiento demo completado` y cada usuario puede
+autenticarse con la contraseña local.
+
+Si falla:
+
+- `Faltan clínicas estructurales`: vuelve a ejecutar `supabase/seed.sql`.
+- Error de variables: revisa que la URL y `SUPABASE_SERVICE_ROLE_KEY` sean
+  reales, sin imprimirlas.
+- Error de permisos: verifica que la service role key corresponda al mismo
+  proyecto que `NEXT_PUBLIC_SUPABASE_URL`.
+
+---
+
+## 3. Cerrar los gates externos de la Fase 12
+
+### 3.1 Validar RLS real
+
+Este paso no debe simularse con Vitest. Ejecuta el SQL real contra Supabase:
+
+```bash
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
+```
+
+El script crea datos temporales y hace `ROLLBACK` al terminar. Debe comprobar:
+
+- ADMIN ve las tres clínicas.
+- MANAGER ve sólo Madrid y Valencia.
+- RECEPTIONIST ve sólo Madrid.
+- Un lead soft-deleted deja de aparecer.
+- No se permite borrar físicamente un lead.
+- Las notas no se pueden modificar ni borrar.
+
+También puedes ejecutar el test Vitest equivalente:
+
+```bash
+SUPABASE_DB_URL="$SUPABASE_DB_URL" \\
+npm test -- --run tests/integration/rls/rls.test.ts
+```
+
+El resultado correcto es `1 passed`, no `1 skipped`.
+
+### 3.2 Validar el E2E completo
+
+El E2E usa navegador y recorre el flujo de la demo. Debe ejecutarse con una
+sesión real y con OpenAI disponible; no cambies el test para ocultar errores.
+
+1. Comprueba que el `.env` tiene Supabase real y `OPENAI_API_KEY` válida.
+2. Ejecuta Playwright con el usuario administrador:
+
+   ```bash
+   E2E_EMAIL='admin@vitalis.demo' \\
+   E2E_PASSWORD='<la-contraseña-local>' \\
+   E2E_AI_ENABLED=true \\
+   npm run test:e2e
+   ```
+
+3. Si ya tienes un servidor válido levantado, añade:
+
+   ```bash
+   E2E_BASE_URL='http://127.0.0.1:3000' \\
+   E2E_EMAIL='admin@vitalis.demo' \\
+   E2E_PASSWORD='<la-contraseña-local>' \\
+   E2E_AI_ENABLED=true \\
+   npm run test:e2e
+   ```
+
+4. El escenario debe completar, en este orden:
+   - login;
+   - dashboard;
+   - creación de lead;
+   - apertura de la ficha;
+   - llamada en la timeline;
+   - generación de IA;
+   - nota generada por IA;
+   - edición del lead;
+   - eliminación y desaparición del listado.
+
+### Resultado de cierre de Fase 12
+
+Cuando RLS y E2E pasen:
+
+1. Edita `Documentos_Iniciales/roadmap.md` y cambia Fase 12 a `[x]`.
+2. Completa la sección de validación con la fecha y el resultado real.
+3. Actualiza el estado equivalente en `README.md`.
+4. Ejecuta:
+
+   ```bash
+   npm test -- --run
+   npm run typecheck
+   npm run lint
+   npm run build
+   git diff --check
+   git status --short
+   ```
+
+5. Haz un commit separado para el cierre de validación, sin incluir secretos.
+
+El resultado es una Fase 12 realmente cerrada, no sólo implementada en local.
+
+---
+
+## 4. Fase 13 — Demo Data
+
+Esta fase todavía no está implementada. Debe comenzar sólo después de cerrar
+los gates de la Fase 12.
+
+### Qué hay que construir
+
+Crear un dataset reproducible y ficticio para que el dashboard y la demo no
+aparezcan vacíos:
+
+- 15 leads.
+- 5 leads en Madrid.
+- 5 leads en Valencia.
+- 5 leads en Sevilla.
+- Tratamientos distribuidos entre implantes, ortodoncia, estética y revisión.
+- Estados distribuidos entre nuevo, contactado, cita agendada, no interesado y
+  cliente.
+- Al menos dos teléfonos duplicables para demostrar la detección de
+  duplicados.
+- Varias notas de llamada/mensaje.
+- Ningún dato personal real ni historia clínica.
+
+### Cómo continuar
+
+Pide/implementa una nueva Task en el `roadmap.md` que cree un seed idempotente,
+por ejemplo `scripts/seed-demo-data.ts`, o amplíe un seed SQL separado. No
+introduzcas los leads demo a mano desde la interfaz porque eso no es
+reproducible.
+
+El seed debe:
+
+1. Obtener los IDs reales de las clínicas por `slug`.
+2. Obtener los IDs de los usuarios demo por email o usar un actor preparado
+   de forma segura.
+3. Insertar los leads con teléfonos normalizados, clínica original, estado y
+   tratamiento válidos.
+4. Insertar las notas asociadas.
+5. Ser idempotente: ejecutarlo dos veces no debe duplicar registros.
+6. No imprimir contraseñas, service role keys ni tokens.
+
+### Validación y resultado
+
+Después de aplicar el seed:
+
+```bash
+npm run build
+```
+
+Comprueba en la aplicación que:
+
+- el dashboard muestra actividad y métricas;
+- los filtros muestran las tres clínicas y varios estados;
+- la detección de duplicados encuentra los teléfonos preparados;
+- cada ficha contiene timeline;
+- los leads siguen protegidos por RLS.
+
+Haz el commit definido por la fase:
+`feat(demo): add Vitalis demo dataset`.
+
+---
+
+## 5. Fase 14 — Producción con Vercel
+
+### 5.1 Conectar GitHub y Vercel
+
+1. Comprueba que el repositorio está en GitHub y que la rama `main` contiene
+   los commits anteriores.
+2. Entra en <https://vercel.com> y selecciona `Add New → Project`.
+3. Importa el repositorio correcto.
+4. Mantén el framework como Next.js.
+5. No añadas secretos al repositorio ni a `next.config.ts`.
+6. Antes del primer deployment, configura en `Settings → Environment
+   Variables` estas variables para `Production` y, si quieres probar previews,
+   también para `Preview`:
+
+   ```text
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY
+   SUPABASE_SERVICE_ROLE_KEY
+   OPENAI_API_KEY
+   OPENAI_MODEL
+   NEXT_PUBLIC_APP_URL
+   ```
+
+   `DEMO_USER_PASSWORD` sólo es necesaria para ejecutar el script de
+   provisionamiento, no para que la aplicación atienda peticiones normales.
+   `SUPABASE_DB_URL` tampoco debe exponerse al navegador ni es necesaria para
+   el runtime web.
+
+7. Ejecuta el deployment.
+
+### Resultado esperado
+
+Vercel muestra un deployment correcto y el build ejecuta `next build` sin
+errores. Comprueba la URL temporal de Vercel antes de configurar el dominio.
+
+### 5.2 Smoke test de producción
+
+En la URL temporal:
+
+```bash
+curl -I https://<deployment>.vercel.app/login
+```
+
+Después comprueba manualmente login, dashboard, listado, creación de lead,
+nota, IA, edición y soft delete. Usa el E2E con `E2E_BASE_URL` si quieres
+automatizar la URL temporal.
+
+Haz el commit definido por la fase:
+`chore(deploy): configure Vercel production`.
+
+---
+
+## 6. Fase 14 — Dominio `crmleads.carlosrevert.es`
+
+### Qué hay que hacer
+
+Asignar el dominio en Vercel y crear exactamente los registros DNS que Vercel
+indique.
+
+### Cómo hacerlo
+
+1. En Vercel, abre el proyecto y entra en `Settings → Domains`.
+2. Añade `crmleads.carlosrevert.es`.
+3. Copia el destino DNS que Vercel muestre. No inventes el valor: puede ser un
+   CNAME u otra configuración según el proveedor.
+4. En el panel DNS de `carlosrevert.es`, crea o modifica sólo el registro del
+   subdominio `crmleads`.
+5. Espera la propagación y vuelve a Vercel para confirmar el dominio.
+6. Verifica:
+
+   ```bash
+   curl -I https://crmleads.carlosrevert.es/login
+   ```
+
+7. Comprueba que el certificado HTTPS es válido y que no existen redirecciones
+   inesperadas.
+
+### Resultado esperado
+
+`https://crmleads.carlosrevert.es` responde al login, usa HTTPS válido y la
+sesión funciona con el dominio final. Añade el dominio a `NEXT_PUBLIC_APP_URL`
+en Vercel y vuelve a desplegar si la aplicación lo necesita.
+
+Haz el commit definido por la fase:
+`chore(deploy): configure Vitalis production domain`.
+
+---
+
+## 7. Fase 15 — Documentación y congelación MVP
+
+### 7.1 Documentación final
+
+Revisa `README.md` y `docs/architecture.md` para que describan sólo lo que
+está validado:
+
+- propósito del CRM;
+- stack y arquitectura Next.js/Supabase;
+- clínicas y conservación de clínica original;
+- detección de duplicados sin merge automático;
+- permisos por rol y clínica;
+- notas append-only;
+- IA supervisada y tono cercano/profesional;
+- URL final;
+- despliegue;
+- forma de ejecutar tests;
+- qué quedaría para una siguiente iteración.
+
+No publiques contraseñas demo. Si necesitas explicar las cuentas, indica sólo
+los emails y que la contraseña se entrega de forma privada.
+
+Haz el commit:
+`docs: finalize project documentation`.
+
+### 7.2 Congelar el MVP
+
+Desde este punto no añadas funcionalidades. Sólo se permiten correcciones de
+bugs que impidan pasar los gates.
+
+Ejecuta la batería completa:
+
+```bash
+npm run lint
+npm run typecheck
+npm test -- --run
+npm test -- --run tests/integration/rls/rls.test.ts
+npm run test:e2e
+npm run build
+git diff --check
+```
+
+Repite también el smoke test del dominio final y verifica que Vercel está
+sirviendo el commit esperado. Haz el commit:
+`chore: freeze MVP for delivery`.
+
+### Resultado esperado
+
+Todos los gates pasan, la demo no requiere preparación manual y no se han
+introducido features tardías.
+
+---
+
+## 8. Fase 16 — Entrega final
+
+Prepara una lista de entrega y no des por finalizado el proyecto hasta marcar
+todo lo siguiente:
+
+- [ ] URL final: `https://crmleads.carlosrevert.es`.
+- [ ] HTTPS y login verificados.
+- [ ] Repositorio GitHub accesible con historial de commits.
+- [ ] README y arquitectura actualizados.
+- [ ] Fase 12 cerrada en `roadmap.md`.
+- [ ] Dataset demo aplicado y reproducible.
+- [ ] Usuario demo disponible de forma privada.
+- [ ] Flujo E2E completo ejecutado.
+- [ ] RLS ejecutado contra la base real.
+- [ ] Loom de aproximadamente 10 minutos preparado.
+
+### Guion recomendado para el Loom
+
+1. Presentar el login y entrar.
+2. Mostrar el dashboard con métricas.
+3. Crear un lead.
+4. Abrir su ficha.
+5. Añadir una llamada.
+6. Generar el borrador de IA y mostrar que queda para revisión humana.
+7. Editar el lead.
+8. Eliminarlo y comprobar que desaparece del listado normal.
+9. Explicar brevemente permisos, RLS, auditoría y decisiones de producto.
+
+No muestres la contraseña, claves, paneles de administración de Supabase,
+tokens ni información personal real.
+
+Haz el commit:
+`docs: prepare final delivery`.
+
+---
+
+## 9. Pendientes externos que no se resuelven editando código
+
+Estos puntos requieren acceso y decisiones tuyas:
+
+- cuenta/proyecto Supabase;
+- contraseña y configuración de PostgreSQL;
+- claves Supabase reales;
+- rotación de la clave OpenAI local si procede;
+- configuración de facturación/límites de OpenAI;
+- usuario demo y contraseña privada;
+- repositorio GitHub y permisos de Vercel;
+- DNS del dominio `carlosrevert.es`;
+- grabación y publicación del Loom.
+
+Hasta que estén resueltos, el proyecto puede seguir desarrollándose en local,
+pero no debe declararse validado en producción ni debe marcarse la Fase 12 como
+cerrada.
+
+## 10. Punto exacto para continuar
+
+Cuando hayas completado las secciones 1, 2 y 3, vuelve a `roadmap.md`:
+
+1. Marca Fase 12 como `[x]` sólo si RLS y E2E pasaron realmente.
+2. Ejecuta una revisión final de `git status`.
+3. Continúa con **Fase 13 — Demo Data**.
+4. Sigue este documento como checklist operativo mientras avanzas por las
+   fases 13, 14, 15 y 16.
+
+El siguiente trabajo de código, una vez cerrada la Fase 12, es el seed
+reproducible de datos demo; no empieces producción con una base vacía.
