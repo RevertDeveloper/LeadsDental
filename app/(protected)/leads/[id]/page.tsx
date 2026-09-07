@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import {
   createNoteAction,
+  generateFollowupAction,
   updateLeadStatusAction,
 } from "@/app/(protected)/leads/[id]/actions";
 import { LeadDetail } from "@/components/leads/lead-detail";
@@ -27,6 +28,7 @@ export default async function LeadDetailPage({ params }: LeadDetailPageProps) {
       lead={lead}
       notes={notes}
       createNoteAction={createNoteAction}
+      generateFollowupAction={generateFollowupAction}
       updateLeadStatusAction={updateLeadStatusAction}
     />
   );

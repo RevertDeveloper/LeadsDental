@@ -10,6 +10,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 
+import { GenerateFollowupButton } from "@/components/ai/generate-followup-button";
 import { NoteForm } from "@/components/notes/note-form";
 import { NoteList } from "@/components/notes/note-list";
 import { LeadClinicBadge } from "@/components/leads/lead-clinic-badge";
@@ -18,6 +19,7 @@ import { LeadStatusSelector } from "@/components/leads/lead-status-selector";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { NoteFormState } from "@/lib/notes/form-state";
+import type { GenerateFollowupState } from "@/lib/ai/form-state";
 import type { NoteRecord } from "@/types/notes";
 import type { LeadWithClinic } from "@/types/leads";
 import type { LeadStatusFormState } from "@/lib/leads/status-form-state";
@@ -50,6 +52,10 @@ type LeadDetailProps = {
     previousState: NoteFormState,
     formData: FormData,
   ) => Promise<NoteFormState>;
+  generateFollowupAction: (
+    previousState: GenerateFollowupState,
+    formData: FormData,
+  ) => Promise<GenerateFollowupState>;
   updateLeadStatusAction: (
     previousState: LeadStatusFormState,
     formData: FormData,
@@ -60,6 +66,7 @@ export function LeadDetail({
   lead,
   notes,
   createNoteAction,
+  generateFollowupAction,
   updateLeadStatusAction,
 }: LeadDetailProps) {
   const originalClinicChanged =
@@ -156,7 +163,8 @@ export function LeadDetail({
       </Card>
 
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/[0.04] via-card to-card">
-        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <CardContent className="flex flex-col gap-5 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
             <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
               <Sparkles className="size-5" aria-hidden="true" />
@@ -173,10 +181,12 @@ export function LeadDetail({
               </p>
             </div>
           </div>
-          <div className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/15 bg-background/80 px-3 py-2 text-xs font-semibold text-muted-foreground">
-            <Bot className="size-3.5 text-primary" aria-hidden="true" />
-            Próximamente
+          <GenerateFollowupButton leadId={lead.id} action={generateFollowupAction} />
           </div>
+          <p className="flex items-start gap-2 border-t border-primary/10 pt-4 text-xs leading-5 text-muted-foreground">
+            <Bot className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
+            La IA sólo prepara un borrador comercial con la información disponible. El equipo debe revisarlo antes de cualquier envío.
+          </p>
         </CardContent>
       </Card>
 
