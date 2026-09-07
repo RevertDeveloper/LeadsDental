@@ -2,10 +2,8 @@
 
 import { redirect } from "next/navigation";
 
-import {
-  createLead,
-} from "@/lib/leads/create-lead";
 import { AuthorizationError } from "@/lib/permissions";
+import { updateLead } from "@/lib/leads/update-lead";
 import type { LeadFormState } from "@/lib/leads/form-state";
 
 function formDataToInput(formData: FormData) {
@@ -18,24 +16,24 @@ function formDataToInput(formData: FormData) {
   return input;
 }
 
-export async function createLeadAction(
+export async function updateLeadAction(
   _previousState: LeadFormState,
   formData: FormData,
 ): Promise<LeadFormState> {
   let result;
 
   try {
-    result = await createLead(formDataToInput(formData));
+    result = await updateLead(formDataToInput(formData));
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return { message: error.message };
     }
 
-    return { message: "No se pudo crear el lead. Inténtalo de nuevo." };
+    return { message: "No se pudo actualizar el lead. Inténtalo de nuevo." };
   }
 
   if (result.ok) {
-    redirect(`/leads/${result.lead.id}/edit`);
+    redirect("/leads");
   }
 
   if (result.code === "DUPLICATE_FOUND") {

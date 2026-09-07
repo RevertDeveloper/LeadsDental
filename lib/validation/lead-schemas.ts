@@ -46,7 +46,7 @@ export const leadCreateSchema = leadFieldsSchema.extend({
 
 export const leadUpdateSchema = leadFieldsSchema.extend({
   id: clinicIdSchema,
+  duplicate_of: clinicIdSchema.optional(),
 });
 
 export type LeadFields = z.infer<typeof leadFieldsSchema>;
-

@@ -44,5 +44,12 @@ describe("lead schemas", () => {
     expect(
       leadUpdateSchema.parse({ ...validLead, id: clinicId }).id,
     ).toBe(clinicId);
+    expect(
+      leadUpdateSchema.parse({
+        ...validLead,
+        id: clinicId,
+        duplicate_of: "22222222-2222-4222-8222-222222222222",
+      }).duplicate_of,
+    ).toBe("22222222-2222-4222-8222-222222222222");
   });
 });
