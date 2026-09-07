@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { generateAndPersistFollowup } from "@/lib/ai/generate-followup";
+import { FollowupProviderError } from "@/lib/ai/openai-client";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 const clinicId = "22222222-2222-4222-8222-222222222222";
@@ -67,8 +68,8 @@ function dependencies(overrides: Record<string, unknown> = {}) {
     createRequestId: () => requestId,
     now: () => 1_757_240_000_000,
     ...overrides,
-    audit,
-    rpc,
+    audit: overrides.audit ?? audit,
+    rpc: overrides.rpc ?? rpc,
   };
 }
 
@@ -95,6 +96,13 @@ describe("generateAndPersistFollowup", () => {
         p_text: "Hola, Ana. ¿Te ayudamos con tu próxima visita?",
         p_request_id: requestId,
         p_actor_user_id: userId,
+        p_metadata: {
+          model: "gpt-5.6-luna",
+          prompt_version: "1.0",
+          request_id: requestId,
+          generated_at: "2025-09-07T10:13:20.000Z",
+          latency_ms: 250,
+        },
       }),
     );
     expect(deps.audit).toHaveBeenCalledTimes(1);
@@ -116,6 +124,51 @@ describe("generateAndPersistFollowup", () => {
       }),
     );
     expect(deps.rpc).not.toHaveBeenCalled();
+  });
+
+  it("distinguishes an invalid provider response and keeps its request id", async () => {
+    const deps = dependencies({
+      generate: vi
+        .fn()
+        .mockRejectedValue(new FollowupProviderError("INVALID_RESPONSE", "invalid")),
+    });
+
+    const result = await generateAndPersistFollowup(leadId, deps);
+
+    expect(result).toMatchObject({ ok: false, code: "GENERATION_FAILED" });
+    expect(deps.audit).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        action: "AI_FOLLOWUP_FAILED",
+        metadata: expect.objectContaining({
+          request_id: requestId,
+          reason: "invalid_response",
+        }),
+      }),
+    );
+    expect(deps.rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not report success when atomic persistence fails", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: new Error("rollback") });
+    const deps = dependencies({
+      rpc,
+      getSupabase: vi.fn().mockResolvedValue({ rpc }),
+    });
+
+    const result = await generateAndPersistFollowup(leadId, deps);
+
+    expect(result).toMatchObject({ ok: false, code: "DATABASE_ERROR" });
+    expect(deps.audit).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        action: "AI_FOLLOWUP_FAILED",
+        metadata: expect.objectContaining({
+          request_id: requestId,
+          reason: "persistence_error",
+        }),
+      }),
+    );
   });
 
   it("rejects malformed lead ids before any dependency is called", async () => {
