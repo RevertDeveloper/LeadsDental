@@ -20,7 +20,7 @@ type NavigationItem = {
 
 const navigation: NavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, enabled: true },
-  { label: "Leads", href: "/leads", icon: UsersRound, enabled: false },
+  { label: "Leads", href: "/leads", icon: UsersRound, enabled: true },
   {
     label: "Actividad",
     href: "/actividad",
