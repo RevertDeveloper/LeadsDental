@@ -15,7 +15,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 2 — Auth y autorización**
 - [x] **Fase 3 — UI Foundation**
 - [x] **Fase 4 — Leads: dominio + CRUD**
-- [ ] **Fase 5 — Notas y actividad**
+- [x] **Fase 5 — Notas y actividad**
 - [ ] **Fase 6 — Auditoría**
 - [ ] **Fase 7 — Ficha de lead y pipeline**
 - [ ] **Fase 8 — IA Follow-up**
@@ -1115,6 +1115,61 @@ La siguiente unidad es **Fase 5 — Notas y actividad**, comenzando por
 - **Commit:** `feat(notes): add lead activity timeline`
 
 ---
+
+# Cierre de Fase 5 — 2026-09-07
+
+La fase queda implementada y validada localmente.
+
+- [x] **F5-T01:** schema Zod de notas, servicio server-only de creación,
+  autorización por clínica mediante Supabase/RLS, `created_by`, metadata JSON y
+  Server Action. Las notas sólo se insertan; no existen operaciones de update o
+  delete en la aplicación.
+- [x] **F5-T02:** ficha inicial `/leads/[id]`, timeline cronológica, tipos y
+  fecha/hora visibles, tratamiento visual específico para mensajes generados
+  por IA y formulario de nueva actividad con estados de validación y pending.
+
+### Archivos incorporados
+
+- `lib/validation/note-schemas.ts`, `lib/notes/` y `types/notes.ts`
+- `app/(protected)/leads/[id]/actions.ts`
+- `app/(protected)/leads/[id]/page.tsx`
+- `components/notes/`
+- `tests/notes/create-note.test.ts`
+
+### Decisiones registradas
+
+- La consulta de notas se ejecuta con el cliente Supabase autenticado y queda
+  limitada por las policies existentes; un lead soft-deleted o fuera del
+  alcance no revela su actividad.
+- El texto de nota se limita a 5.000 caracteres, se recorta en los extremos y
+  se renderiza como texto escapado con saltos de línea, nunca como HTML.
+- La timeline ordena del registro más antiguo al más reciente para conservar el
+  flujo natural de seguimiento; las notas de IA usan una identidad visual
+  diferenciada y no se pueden editar ni eliminar.
+- Tras una creación correcta se revalida la ruta de la ficha y el formulario se
+  limpia mediante una revisión de estado, sin efectos de renderizado en cascada.
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 10 archivos, 28 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `npm run build` ✅ — Next.js 16.3.4; se genera `/leads/[id]` como ruta
+  dinámica.
+- `git diff --check` ✅
+- E2E real con Supabase y navegador: pendiente de credenciales y harness E2E
+  del entorno; los contratos de servicio se cubren con dobles de Supabase.
+
+### Commits de la fase
+
+- `72013be` `feat(notes): add append-only lead notes`
+- `feat(notes): add lead activity timeline` (este commit)
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 6 — Auditoría**, comenzando por `F6-T01` y
+registrando las mutaciones CRM sin guardar prompts completos ni datos sensibles
+innecesarios.
 
 # FASE 6 — Auditoría
 

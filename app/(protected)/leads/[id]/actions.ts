@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createNote } from "@/lib/notes/create-note";
-import { NoteFormState } from "@/lib/notes/form-state";
+import type { NoteFormState } from "@/lib/notes/form-state";
 import { AuthorizationError } from "@/lib/permissions";
 
 function formDataToInput(formData: FormData) {
@@ -16,7 +16,7 @@ function formDataToInput(formData: FormData) {
 }
 
 export async function createNoteAction(
-  _previousState: NoteFormState,
+  previousState: NoteFormState,
   formData: FormData,
 ): Promise<NoteFormState> {
   let result;
@@ -25,23 +25,30 @@ export async function createNoteAction(
     result = await createNote(formDataToInput(formData));
   } catch (error) {
     if (error instanceof AuthorizationError) {
-      return { message: error.message };
+      return { revision: previousState.revision ?? 0, message: error.message };
     }
 
-    return { message: "No se pudo guardar la nota. Inténtalo de nuevo." };
+    return {
+      revision: previousState.revision ?? 0,
+      message: "No se pudo guardar la nota. Inténtalo de nuevo.",
+    };
   }
 
   if (result.ok) {
     revalidatePath(`/leads/${result.note.lead_id}`);
-    return {};
+    return {
+      success: true,
+      revision: (previousState.revision ?? 0) + 1,
+    };
   }
 
   if (result.code === "VALIDATION_ERROR") {
     return {
+      revision: previousState.revision ?? 0,
       message: "Revisa el contenido de la nota antes de guardarla.",
       fieldErrors: result.fieldErrors,
     };
   }
 
-  return { message: result.message };
+  return { revision: previousState.revision ?? 0, message: result.message };
 }

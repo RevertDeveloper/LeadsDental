@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -236,9 +237,9 @@ export function LeadForm({ action, clinics, lead }: LeadFormProps) {
       ) : null}
 
       <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
-        <a href="/leads" className={buttonVariants({ variant: "outline", size: "lg" })}>
+        <Link href="/leads" className={buttonVariants({ variant: "outline", size: "lg" })}>
           Cancelar
-        </a>
+        </Link>
         <button
           type="submit"
           disabled={pending || clinics.length === 0}
