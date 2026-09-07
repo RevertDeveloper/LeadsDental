@@ -12,7 +12,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 
 - [x] **Fase 0 — Bootstrap del proyecto**
 - [x] **Fase 1 — Core Database**
-- [ ] **Fase 2 — Auth y autorización**
+- [x] **Fase 2 — Auth y autorización**
 - [ ] **Fase 3 — UI Foundation**
 - [ ] **Fase 4 — Leads: dominio + CRUD**
 - [ ] **Fase 5 — Notas y actividad**
@@ -650,6 +650,71 @@ La siguiente unidad es **Fase 2 — Auth y autorización**, comenzando por
   - Sus permisos corresponden a la matriz definida.
 - **Testing / Validación:** Login con los tres roles + prueba de acceso cruzado.
 - **Commit:** `feat(auth): add demo user provisioning`
+
+---
+
+## Cierre de Fase 2 — 2026-09-07
+
+La fase queda implementada y validada localmente.
+
+- [x] **F2-T01:** login y logout con Supabase Auth mediante Server Actions,
+  formulario email/password, errores genéricos, cookies SSR y redirección del
+  área privada.
+- [x] **F2-T02:** resolución server-side de `profiles`, rol, clínicas activas y
+  helpers `requireAuthenticatedUser`, `requireRole` y
+  `requireClinicAccess`, con errores tipados y rechazo de perfiles inactivos.
+- [x] **F2-T03:** provisionador idempotente de los tres usuarios demo usando
+  `supabase.auth.admin`, perfiles y asignaciones exactas por clínica. La
+  contraseña se recibe por `DEMO_USER_PASSWORD` y nunca se versiona ni se
+  imprime.
+
+### Archivos incorporados
+
+- `app/login/page.tsx`
+- `app/login/actions.ts`
+- `components/auth/login-form.tsx`
+- `app/dashboard/page.tsx`
+- `lib/auth/session.ts`
+- `lib/auth/get-current-user.ts`
+- `lib/permissions/`
+- `types/auth.ts`
+- `scripts/seed-demo-users.ts`
+- `tests/auth/permissions.test.ts`
+- `tests/auth/demo-users.test.ts`
+- `docs/demo-users.md` (ignorado por Git; instrucciones locales)
+
+### Decisiones registradas
+
+- Supabase `auth.getUser()` es la fuente de identidad server-side; no se
+  confía en metadata enviada por el cliente.
+- `proxy.ts` realiza el refresco de sesión y una comprobación optimista de
+  rutas; cada página u operación privada debe usar además los helpers de
+  `lib/permissions/`.
+- La autorización efectiva combina usuario autenticado, perfil activo, rol y
+  clínicas asignadas. ADMIN mantiene alcance global; MANAGER y RECEPTIONIST
+  quedan limitados a sus clínicas.
+- No existe signup público ni recuperación de contraseña en esta fase; se
+  mantiene el MVP de acceso interno.
+- El service role se usa exclusivamente en el script local de provisioning,
+  nunca en el navegador ni para saltarse la autorización normal del CRM.
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 4 archivos, 11 tests.
+- `npm run lint` ✅
+- `npm run typecheck` ✅
+- `npm run build` ✅ — Next.js 16.3.4.
+- `git diff --check` ✅
+- `docs/demo-users.md` está ignorado y no hay contraseña ni service role real
+  en los archivos versionados ✅.
+- Smoke remoto con los tres usuarios y Supabase configurado: pendiente de
+  credenciales del proyecto y `DEMO_USER_PASSWORD`; el script ejecutable y la
+  ruta de validación quedan preparados.
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 3 — UI Foundation**, comenzando por el layout
+privado y la navegación del CRM.
 
 ---
 
