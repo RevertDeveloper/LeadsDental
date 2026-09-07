@@ -1764,6 +1764,42 @@ La siguiente unidad es **Fase 9 — Dashboard**, comenzando por `F9-T01`.
 - **Testing / Validación:** E2E dashboard + comparación con fixtures.
 - **Commit:** `feat(dashboard): add operational overview`
 
+### Estado de implementación de Fase 9
+
+- Las métricas operativas consultan únicamente leads activos dentro del alcance
+  RLS del usuario y cubren total, nuevos, citas, implantes y distribuciones por
+  estado, clínica y tratamiento.
+- La priorización MVP queda centralizada en `requiresAttention`: sólo un lead
+  de implantes con estado nuevo recibe el indicador accesible `Necesita
+  seguimiento`.
+- `/dashboard` muestra saludo contextual, métricas principales, leads recientes,
+  prioridades, estados vacíos, skeleton de carga y distribución compacta del
+  pipeline sin introducir gráficas decorativas.
+
+### Validación ejecutada
+
+- `npm test` ✅ — 20 archivos, 61 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+- `npm run build` ✅ — Next.js 16.3.4 compila `/dashboard` como ruta dinámica
+  protegida.
+- Smoke E2E ⏸️ — `/dashboard` redirige correctamente a `/login`, pero la prueba
+  no puede autenticarse porque el `.env` local usa
+  `your-project.supabase.co` como placeholder y no resuelve DNS.
+
+### Commits de la fase
+
+- `9773da2` `feat(dashboard): add operational metrics`
+- `944c4d6` `feat(leads): add attention priority`
+- `df8d984` `feat(dashboard): add operational overview`
+
+### Pendiente de cierre
+
+Configurar un proyecto Supabase local o válido, cargar fixtures de demo y
+ejecutar el E2E del dashboard con los tres roles. La fase debe permanecer
+pendiente hasta completar esa validación.
+
 ---
 
 # FASE 10 — Settings y control de administración
