@@ -14,7 +14,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 1 — Core Database**
 - [x] **Fase 2 — Auth y autorización**
 - [x] **Fase 3 — UI Foundation**
-- [ ] **Fase 4 — Leads: dominio + CRUD**
+- [x] **Fase 4 — Leads: dominio + CRUD**
 - [ ] **Fase 5 — Notas y actividad**
 - [ ] **Fase 6 — Auditoría**
 - [ ] **Fase 7 — Ficha de lead y pipeline**
@@ -995,6 +995,72 @@ La siguiente unidad es **Fase 4 — Leads: dominio + CRUD**, comenzando por
 - **Commit:** `feat(leads): implement soft delete`
 
 ---
+
+# Cierre de Fase 4 — 2026-09-07
+
+La fase queda implementada y validada localmente.
+
+- [x] **F4-T01:** schemas Zod compartidos para creación y actualización, con
+  normalización de espacios, UUID de clínica y enums cerrados.
+- [x] **F4-T02:** normalización determinista de teléfonos españoles y detección
+  de duplicados activos sin merge automático; las actualizaciones excluyen el
+  propio lead.
+- [x] **F4-T03:** creación server-side con autorización por clínica, RLS,
+  `phone_normalized`, `original_clinic_id`, `created_by` y confirmación
+  explícita de duplicados mediante `duplicate_of`.
+- [x] **F4-T04:** listado operacional con búsqueda, filtros combinables por
+  clínica/estado/tratamiento/fuente, ordenación por alta/actividad y prioridad
+  visual para implantes nuevos.
+- [x] **F4-T05:** formulario único de alta y edición, validación compartida,
+  loading/error states y conservación de la clínica original al reasignar.
+- [x] **F4-T06:** soft delete con diálogo de confirmación, `deleted_at` y
+  `deleted_by`; no se ejecuta borrado físico ni se eliminan notas.
+
+### Archivos incorporados
+
+- `lib/validation/lead-schemas.ts` y `types/leads.ts`
+- `lib/leads/` con normalización, duplicados, creación, listado, edición y
+  borrado lógico
+- `app/(protected)/leads/` con listado, alta, edición y Server Actions
+- `components/leads/` con filtros, tabla, formulario y diálogo de borrado
+- `tests/leads/` con 23 tests unitarios y de servicio
+
+### Decisiones registradas
+
+- La búsqueda se realiza después de recuperar únicamente los leads permitidos
+  por RLS; así no se interpola texto de usuario en filtros PostgREST.
+- Los duplicados sólo generan una advertencia y requieren seleccionar el
+  candidato confirmado; nunca se fusionan registros automáticamente.
+- La actualización conserva `original_clinic_id` y exige acceso server-side a
+  la clínica actual y a la nueva clínica.
+- El listado normal filtra soft-deleted y la acción de borrado sólo actualiza
+  metadatos de trazabilidad.
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 9 archivos, 23 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `npm run build` ✅ — Next.js 16.3.4; rutas dinámicas `/leads`,
+  `/leads/new` y `/leads/[id]/edit` compiladas.
+- `git diff --check` ✅
+- Smoke remoto de Supabase y E2E de navegador: pendientes de credenciales y
+  harness E2E del entorno; los servicios quedan cubiertos con dobles de
+  Supabase y los contratos se validan en CI local.
+
+### Commits de la fase
+
+- `caa6d20` `feat(validation): add lead schemas`
+- `fd49281` `feat(leads): add phone normalization and duplicate detection`
+- `7a8c6bf` `feat(leads): implement lead creation`
+- `50b389f` `feat(leads): add lead listing and filters`
+- `4d4b2dc` `feat(leads): add lead create and edit forms`
+- `feat(leads): implement soft delete` (este commit)
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 5 — Notas y actividad**, comenzando por
+`F5-T01` y usando el lead activo y el aislamiento por clínica ya disponibles.
 
 # FASE 5 — Notas y actividad
 

@@ -3,6 +3,7 @@ import { ArrowUpRight, Phone } from "lucide-react";
 
 import { LeadClinicBadge } from "@/components/leads/lead-clinic-badge";
 import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
+import { DeleteLeadDialog } from "@/components/leads/delete-lead-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { LeadWithClinic } from "@/types/leads";
@@ -89,13 +90,16 @@ export function LeadTable({ leads }: { leads: LeadWithClinic[] }) {
                     {formatDate(lead.created_at)}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Link
-                      href={`/leads/${lead.id}/edit`}
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-                    >
-                      Editar
-                      <ArrowUpRight className="size-3.5" aria-hidden="true" />
-                    </Link>
+                    <div className="flex justify-end gap-1">
+                      <Link
+                        href={`/leads/${lead.id}/edit`}
+                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+                      >
+                        Editar
+                        <ArrowUpRight className="size-3.5" aria-hidden="true" />
+                      </Link>
+                      <DeleteLeadDialog leadId={lead.id} leadName={lead.name} />
+                    </div>
                   </td>
                 </tr>
               );
