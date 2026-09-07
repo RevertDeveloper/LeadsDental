@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Activity,
+  ClipboardList,
   LayoutDashboard,
   Settings2,
   Sparkles,
@@ -32,6 +33,13 @@ const navigation: NavigationItem[] = [
     label: "Configuración",
     href: "/settings/users",
     icon: Settings2,
+    allowedRoles: ["ADMIN"],
+    enabled: true,
+  },
+  {
+    label: "Auditoría",
+    href: "/settings/audit",
+    icon: ClipboardList,
     allowedRoles: ["ADMIN"],
     enabled: true,
   },
