@@ -4,8 +4,8 @@ import { ArrowUpRight, Phone } from "lucide-react";
 import { LeadClinicBadge } from "@/components/leads/lead-clinic-badge";
 import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
 import { DeleteLeadDialog } from "@/components/leads/delete-lead-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { LeadPriorityIndicator } from "@/components/leads/lead-priority-indicator";
 import type { LeadWithClinic } from "@/types/leads";
 
 const treatmentLabels = {
@@ -47,12 +47,14 @@ export function LeadTable({ leads }: { leads: LeadWithClinic[] }) {
           </thead>
           <tbody className="divide-y divide-border/80">
             {leads.map((lead) => {
-              const priority = lead.treatment === "implantes" && lead.status === "nuevo";
-
               return (
                 <tr
                   key={lead.id}
-                  className={priority ? "bg-blue-50/45" : "bg-card hover:bg-muted/25"}
+                  className={
+                    lead.treatment === "implantes" && lead.status === "nuevo"
+                      ? "bg-blue-50/45"
+                      : "bg-card hover:bg-muted/25"
+                  }
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-start gap-3">
@@ -67,11 +69,7 @@ export function LeadTable({ leads }: { leads: LeadWithClinic[] }) {
                           >
                             {lead.name}
                           </Link>
-                          {priority ? (
-                            <Badge variant="outline" className="border-blue-200 bg-blue-50 text-[10px] text-blue-700">
-                              Prioridad
-                            </Badge>
-                          ) : null}
+                          <LeadPriorityIndicator lead={lead} />
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">{lead.phone}</p>
                       </div>
