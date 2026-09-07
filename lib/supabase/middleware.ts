@@ -3,6 +3,22 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { getPublicEnv, hasPublicEnv } from "@/lib/config/env";
 
+const privateRoutePrefixes = ["/dashboard", "/leads", "/settings"];
+
+function isPrivateRoute(pathname: string) {
+  return (
+    pathname === "/" ||
+    privateRoutePrefixes.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  );
+}
+
+function copyCookies(source: NextResponse, target: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => target.cookies.set(cookie));
+  return target;
+}
+
 /** Refreshes Supabase auth cookies without granting service-role privileges. */
 export async function updateSupabaseSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -39,8 +55,24 @@ export async function updateSupabaseSession(request: NextRequest) {
   );
 
   // Calling getUser validates and refreshes the auth session through Supabase.
-  // Route authorization remains a server-side responsibility in later phases.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname === "/login" && user) {
+    return copyCookies(
+      response,
+      NextResponse.redirect(new URL("/dashboard", request.url)),
+    );
+  }
+
+  if (isPrivateRoute(pathname) && !user) {
+    return copyCookies(
+      response,
+      NextResponse.redirect(new URL("/login", request.url)),
+    );
+  }
 
   return response;
 }
