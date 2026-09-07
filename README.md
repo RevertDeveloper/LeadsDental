@@ -1,16 +1,17 @@
 # Clínica Dental Vitalis
 
 CRM comercial interno para centralizar leads, seguimiento y operaciones de
-Clínica Dental Vitalis. El desarrollo sigue el roadmap de `Docs/roadmap.md` por
-fases cerradas y validadas.
+Clínica Dental Vitalis. El desarrollo sigue el roadmap de
+`Documentos_Iniciales/roadmap.md` por fases cerradas y validadas.
 
 ## Estado
 
-Fase 0 — Bootstrap del proyecto: en implementación/validación.
+Fase 1 — Core Database: implementada y validada.
 
 La base actual incluye Next.js App Router, TypeScript estricto, Tailwind CSS,
-shadcn/ui, contrato de entorno con Zod, clientes Supabase SSR y tests de
-configuración. Todavía no incluye Auth operativa, tablas, leads ni dashboard.
+shadcn/ui, contrato de entorno con Zod, clientes Supabase SSR, el esquema CRM
+de Supabase, seed de clínicas y políticas RLS. Todavía no incluye Auth
+operativa, CRUD de leads ni dashboard.
 
 ## Puesta en marcha
 
@@ -44,7 +45,7 @@ app/                 App Router y páginas
 components/          Componentes reutilizables y shadcn/ui
 lib/config/          Contratos de configuración
 lib/supabase/        Clientes browser, server y middleware
-supabase/            Migraciones y seeds de fases futuras
+supabase/            Migraciones, seed y tests SQL de la base de datos
 tests/               Tests unitarios
 docs/                Documentación operativa y técnica
 scripts/             Automatizaciones de soporte

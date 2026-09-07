@@ -35,6 +35,19 @@ npm run build
 
 La aplicación local se sirve en <http://localhost:3000>.
 
+## Base de datos
+
+Las migraciones de Supabase se aplican en orden desde `supabase/migrations/`.
+El seed estructural crea Madrid, Valencia y Sevilla, pero no crea usuarios ni
+leads demo. Para validar RLS contra una base con el esquema y el seed aplicados:
+
+```bash
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
+```
+
+El test revierte sus datos temporales al terminar y cubre ADMIN, MANAGER,
+RECEPTIONIST, soft delete y notas append-only.
+
 ## Flujo Git
 
 1. Trabaja en una rama descriptiva basada en `main`.
