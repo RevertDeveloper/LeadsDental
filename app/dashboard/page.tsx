@@ -1,15 +1,25 @@
 import { redirect } from "next/navigation";
 
 import { logout } from "@/app/login/actions";
-import { getAuthenticatedAuthUser } from "@/lib/auth/session";
+import { requireAuthenticatedUser } from "@/lib/permissions";
+import { AuthorizationError } from "@/lib/permissions/errors";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const user = await getAuthenticatedAuthUser();
+  let user;
 
-  if (!user) {
-    redirect("/login");
+  try {
+    user = await requireAuthenticatedUser();
+  } catch (error) {
+    if (
+      error instanceof AuthorizationError &&
+      ["UNAUTHENTICATED", "INACTIVE_USER", "FORBIDDEN"].includes(error.code)
+    ) {
+      redirect("/login");
+    }
+
+    throw error;
   }
 
   return (
@@ -41,7 +51,7 @@ export default async function DashboardPage() {
             la operación CRM se incorporarán en las siguientes fases.
           </p>
           <p className="mt-6 rounded-lg bg-[#f8fafc] px-4 py-3 font-mono text-xs break-all text-[#475569]">
-            {user.email}
+            {user.email ?? "Cuenta interna"} · {user.role}
           </p>
         </section>
       </div>

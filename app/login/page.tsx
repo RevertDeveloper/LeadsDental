@@ -1,12 +1,24 @@
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/auth/login-form";
-import { getAuthenticatedAuthUser } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { AuthorizationError } from "@/lib/permissions/errors";
 
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
-  const user = await getAuthenticatedAuthUser();
+  let user = null;
+
+  try {
+    user = await getCurrentUser();
+  } catch (error) {
+    if (
+      !(error instanceof AuthorizationError) ||
+      !["INACTIVE_USER", "FORBIDDEN"].includes(error.code)
+    ) {
+      throw error;
+    }
+  }
 
   if (user) {
     redirect("/dashboard");

@@ -60,13 +60,6 @@ export async function updateSupabaseSession(request: NextRequest) {
   } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
-  if (pathname === "/login" && user) {
-    return copyCookies(
-      response,
-      NextResponse.redirect(new URL("/dashboard", request.url)),
-    );
-  }
-
   if (isPrivateRoute(pathname) && !user) {
     return copyCookies(
       response,
