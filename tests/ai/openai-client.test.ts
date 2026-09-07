@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   FollowupProviderError,
+  parseGeneratedMessage,
   requestFollowupMessage,
 } from "@/lib/ai/openai-client";
 
@@ -26,6 +27,14 @@ const environment = {
 };
 
 describe("requestFollowupMessage", () => {
+  it("parses and trims only a valid structured message", () => {
+    expect(parseGeneratedMessage('{"message":"  Hola, Ana.  "}')).toBe("Hola, Ana.");
+    expect(() => parseGeneratedMessage(null)).toThrowError(FollowupProviderError);
+    expect(() => parseGeneratedMessage('{"message":""}')).toThrowError(
+      FollowupProviderError,
+    );
+  });
+
   it("calls Responses API with private credentials and structured output", async () => {
     const create = vi.fn().mockResolvedValue({
       output_text: JSON.stringify({ message: "Hola, Ana. ¿Seguimos en contacto?" }),

@@ -48,6 +48,13 @@ describe("server-side authorization matrix", () => {
     expect(hasRequiredRole(manager, "RECEPTIONIST")).toBe(false);
   });
 
+  it("does not grant a manager access through an unrelated clinic assignment", () => {
+    const manager = user("CLINIC_MANAGER", [madrid]);
+
+    expect(canAccessClinic(manager, "33333333-3333-3333-3333-333333333333")).toBe(false);
+    expect(hasRequiredRole(manager, ["ADMIN", "CLINIC_MANAGER"])).toBe(true);
+  });
+
   it("limits receptionists to their assigned clinic", () => {
     const receptionist = user("RECEPTIONIST", [madrid]);
 
