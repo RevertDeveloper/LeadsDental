@@ -13,7 +13,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 0 — Bootstrap del proyecto**
 - [x] **Fase 1 — Core Database**
 - [x] **Fase 2 — Auth y autorización**
-- [ ] **Fase 3 — UI Foundation**
+- [x] **Fase 3 — UI Foundation**
 - [ ] **Fase 4 — Leads: dominio + CRUD**
 - [ ] **Fase 5 — Notas y actividad**
 - [ ] **Fase 6 — Auditoría**
@@ -773,6 +773,57 @@ privado y la navegación del CRM.
 - **Commit:** `feat(ui): add Vitalis visual system`
 
 ---
+
+## Cierre de Fase 3 — 2026-09-07
+
+La fase queda implementada y validada.
+
+- [x] **F3-T01:** shell privado compartido mediante route group, navegación
+  condicionada por rol, cabecera con usuario/clínica, logout y adaptación
+  responsive para escritorio y móvil.
+- [x] **F3-T02:** sistema visual Vitalis basado en fondo `#F8FAFC`, superficies
+  blancas, texto `#0F172A`, secundario `#64748B`, bordes `#E2E8F0`, azul
+  primario `#2563EB`, cards, badges, estados feedback y accesibilidad visual.
+
+### Archivos incorporados
+
+- `app/(protected)/layout.tsx`
+- `app/(protected)/dashboard/page.tsx`
+- `components/layout/`
+- `components/ui/badge.tsx`
+- `components/ui/card.tsx`
+- `components/ui/feedback-state.tsx`
+- `components/leads/lead-clinic-badge.tsx`
+- `components/leads/lead-status-badge.tsx`
+
+### Decisiones registradas
+
+- El route group `(protected)` concentra la comprobación server-side de sesión;
+  las futuras rutas privadas heredarán el mismo shell sin duplicar auth.
+- La navegación sólo muestra Actividad a ADMIN/CLINIC_MANAGER y Configuración
+  a ADMIN, manteniendo Dashboard y Leads para los roles internos operativos.
+- Las clínicas se identifican mediante nombre y color; ningún badge depende
+  únicamente del color.
+- El Dashboard inicial sólo muestra un estado vacío explícito. No se añaden
+  métricas decorativas ni datos ficticios antes de implementar el dominio de
+  leads.
+- Los primitives visuales usan tokens semánticos CSS para que la UI futura no
+  dependa de colores inline dispersos.
+
+### Validación ejecutada
+
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `npm test -- --run` ✅ — 4 archivos, 11 tests.
+- `npm run build` ✅ — Next.js 16.3.4.
+- Smoke HTTP local ✅ — `/` y `/login` responden `200`; `/dashboard` redirige a
+  `/login` sin sesión.
+- `git diff --check` ✅
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 4 — Leads: dominio + CRUD**, comenzando por
+`F4-T01` y usando los contratos visuales de badges y estados definidos aquí.
 
 # FASE 4 — Leads: dominio + CRUD
 

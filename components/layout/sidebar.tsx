@@ -8,29 +8,32 @@ import {
 } from "lucide-react";
 
 import type { CurrentUser, UserRole } from "@/types/auth";
-import { cn } from "@/lib/utils";
+import { SidebarNav, type SidebarNavItem } from "@/components/layout/sidebar-nav";
 
 type NavigationItem = {
   label: string;
   href: string;
-  icon: typeof LayoutDashboard;
+  icon: SidebarNavItem["icon"];
   allowedRoles?: readonly UserRole[];
+  enabled?: boolean;
 };
 
 const navigation: NavigationItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Leads", href: "/leads", icon: UsersRound },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, enabled: true },
+  { label: "Leads", href: "/leads", icon: UsersRound, enabled: false },
   {
     label: "Actividad",
     href: "/actividad",
     icon: Activity,
     allowedRoles: ["ADMIN", "CLINIC_MANAGER"],
+    enabled: false,
   },
   {
     label: "Configuración",
     href: "/configuracion",
     icon: Settings2,
     allowedRoles: ["ADMIN"],
+    enabled: false,
   },
 ];
 
@@ -72,33 +75,12 @@ export function Sidebar({ user }: { user: CurrentUser }) {
         <p className="mb-3 hidden px-3 text-[10px] font-bold tracking-[0.18em] text-sidebar-foreground/45 uppercase lg:block">
           Espacio de trabajo
         </p>
-        <nav
-          aria-label="Navegación principal"
-          className="flex min-w-max gap-1 lg:min-w-0 lg:flex-col"
-        >
-          {visibleNavigation.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                  item.href === "/dashboard" &&
-                    "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm",
-                )}
-              >
-                <Icon
-                  className="size-[18px] text-sidebar-foreground/55 transition-colors group-hover:text-sidebar-primary"
-                  strokeWidth={1.9}
-                  aria-hidden="true"
-                />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <SidebarNav
+          items={visibleNavigation.map(({ enabled, ...item }) => ({
+            ...item,
+            disabled: enabled === false,
+          }))}
+        />
       </div>
 
       <div className="hidden border-t border-sidebar-border p-5 lg:block">

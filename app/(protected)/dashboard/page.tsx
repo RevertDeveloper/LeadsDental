@@ -1,3 +1,5 @@
+import { FeedbackState } from "@/components/ui/feedback-state";
+
 export default function DashboardPage() {
   return (
     <div className="space-y-8">
@@ -18,23 +20,11 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-xs font-semibold text-muted-foreground">Leads activos</p>
-          <p className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-foreground">—</p>
-          <p className="mt-1 text-xs text-muted-foreground">Disponible en Fase 4</p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-xs font-semibold text-muted-foreground">Citas pendientes</p>
-          <p className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-foreground">—</p>
-          <p className="mt-1 text-xs text-muted-foreground">Disponible en Fase 4</p>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-xs font-semibold text-muted-foreground">Actividad reciente</p>
-          <p className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-foreground">—</p>
-          <p className="mt-1 text-xs text-muted-foreground">Disponible en Fase 5</p>
-        </div>
-      </section>
+      <FeedbackState
+        variant="empty"
+        title="El resumen aparecerá aquí"
+        description="Los datos reales del pipeline se incorporarán cuando el dominio de leads esté disponible."
+      />
     </div>
   );
 }

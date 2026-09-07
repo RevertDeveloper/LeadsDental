@@ -6,12 +6,13 @@ Clínica Dental Vitalis. El desarrollo sigue el roadmap de
 
 ## Estado
 
-Fase 1 — Core Database: implementada y validada.
+Fase 3 — UI Foundation: implementada y validada.
 
 La base actual incluye Next.js App Router, TypeScript estricto, Tailwind CSS,
 shadcn/ui, contrato de entorno con Zod, clientes Supabase SSR, el esquema CRM
-de Supabase, seed de clínicas y políticas RLS. Todavía no incluye Auth
-operativa, CRUD de leads ni dashboard.
+de Supabase, seed de clínicas, políticas RLS, autenticación interna,
+autorización server-side y el shell responsive del CRM. Todavía no incluye CRUD
+de leads ni datos de negocio.
 
 ## Puesta en marcha
 

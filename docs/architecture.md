@@ -9,9 +9,10 @@ La aplicación sigue el stack cerrado del roadmap:
 - OpenAI sólo desde código server-side.
 - Vitest para unit tests y Playwright para E2E en la fase de testing integral.
 
-La Fase 1 deja creado el núcleo de datos sin introducir UI, autenticación
-operativa ni datos demo. Las migraciones viven en `supabase/migrations/` y el
-seed estructural en `supabase/seed.sql`.
+Las Fases 1–3 dejan creado el núcleo de datos, la autenticación interna, la
+autorización server-side y la UI foundation del CRM, sin introducir CRUD de
+leads ni datos demo. Las migraciones viven en `supabase/migrations/` y el seed
+estructural en `supabase/seed.sql`.
 
 El modelo contiene `clinics`, `profiles`, `user_clinics`, `leads`, `notes` y
 `audit_log`, con enums de dominio, claves foráneas, timestamps e índices para
@@ -33,4 +34,11 @@ El contrato de secretos vive en `lib/config/server-env.ts`, protegido por
 `server-only`; el módulo público `lib/config/env.ts` no contiene esas claves.
 
 Los clientes Supabase usan la anon key y cookies gestionadas por SSR. No hay
-cliente service-role en browser ni bypass de RLS.
+cliente service-role en browser ni bypass de RLS. Las rutas privadas heredan
+`app/(protected)/layout.tsx`, que resuelve el usuario activo en server-side y
+comparte sidebar, cabecera, logout y contexto de clínicas.
+
+La UI foundation usa tokens semánticos en `app/globals.css`, primitives
+reutilizables en `components/ui/`, y badges que combinan texto con el color de
+la clínica o el estado del lead. El dashboard inicial muestra un estado vacío
+explícito hasta que la Fase 4 incorpore datos reales.
