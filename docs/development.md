@@ -31,9 +31,25 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run test:e2e
 ```
 
 La aplicación local se sirve en <http://localhost:3000>.
+
+El recorrido E2E completo necesita un proyecto Supabase operativo, un usuario
+demo y una clave de OpenAI configurada en el entorno de ejecución. Se ejecuta
+con variables fuera de Git:
+
+```bash
+E2E_EMAIL='usuario-demo@vitalis.demo' \\
+E2E_PASSWORD='contraseña-local' \\
+E2E_AI_ENABLED=true \\
+npm run test:e2e
+```
+
+Sin esas variables, Playwright omite el escenario con un motivo visible. Para
+usar un servidor ya desplegado, añade `E2E_BASE_URL`; de forma local el runner
+usa el puerto `3100` para no interferir con `npm run dev` en `3000`.
 
 ## Base de datos
 
@@ -47,6 +63,11 @@ psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
 
 El test revierte sus datos temporales al terminar y cubre ADMIN, MANAGER,
 RECEPTIONIST, soft delete y notas append-only.
+
+La misma comprobación está disponible desde Vitest en
+`tests/integration/rls/rls.test.ts` y se omite si `SUPABASE_DB_URL` no está
+definida. No se considera un RLS validado hasta que ese test se ejecute contra
+la base real.
 
 ## Flujo Git
 

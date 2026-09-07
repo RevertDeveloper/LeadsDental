@@ -2176,6 +2176,42 @@ deberán retomarse cuando exista un proyecto Supabase válido y usuarios demo.
 
 La secuencia coincide directamente con la demostración solicitada por DelegIA: login/dashboard, creación, nota, IA, edición y eliminación. 
 
+### Estado de implementación de la fase
+
+La implementación local de las cuatro Tasks está terminada:
+
+- **F12-T01** ✅ — tests de dominio para duplicados, permisos, schemas,
+  prioridad, prompt y parsing estructurado de IA.
+- **F12-T02** ✅ — ciclo stateful de CRUD/notas/estado/cambio de clínica/soft
+  delete y runner que ejecuta el SQL RLS real con `SUPABASE_DB_URL`.
+- **F12-T03** ✅ — respuesta IA inválida, error de proveedor, rate limit,
+  metadata/request ID y fallo de persistencia atómica.
+- **F12-T04** ✅ — configuración Playwright y recorrido browser completo.
+
+La fase se mantiene abierta (`[ ]` en el índice) hasta ejecutar los dos gates
+que dependen de infraestructura externa: el contrato RLS contra una base
+Supabase real y el E2E completo con usuario demo, IA habilitada y datos
+persistidos. Sin esas variables, los runners muestran un skip explícito y no
+una aprobación falsa.
+
+### Validación local de Fase 12
+
+- `npm test -- --run` ✅ — 25 archivos, 78 tests correctos; 1 test RLS
+  omitido por no existir `SUPABASE_DB_URL`.
+- `npm run test:e2e` ✅ — configuración Playwright cargada; 1 escenario
+  omitido por faltar `E2E_EMAIL`, `E2E_PASSWORD` y `E2E_AI_ENABLED=true`.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+
+### Commits de Fase 12
+
+- `0867135` — `test(core): cover domain validation and permissions`
+- `c100f3b` — `test(leads): add CRUD and permission coverage`
+- `4988f37` — `test(ai): cover follow-up generation`
+- `test(e2e): cover Vitalis CRM demo flow` — implementación local y gates
+  externos documentados.
+
 ---
 
 # FASE 13 — Demo Data

@@ -6,8 +6,8 @@ Clínica Dental Vitalis. El desarrollo sigue el roadmap de
 
 ## Estado
 
-Fase 9 — Dashboard: implementada; pendiente de validación E2E con una sesión
-Supabase válida.
+Fase 12 — Testing integral: implementación local terminada; pendientes los
+gates RLS y E2E contra un proyecto Supabase válido.
 
 La base actual incluye Next.js App Router, TypeScript estricto, Tailwind CSS,
 shadcn/ui, contrato de entorno con Zod, clientes Supabase SSR, el esquema CRM
@@ -15,9 +15,9 @@ de Supabase, seed de clínicas, políticas RLS, autenticación interna,
 autorización server-side, CRUD de leads, notas append-only, auditoría, pipeline
 comercial y generación supervisada de mensajes de seguimiento con OpenAI
 Responses API, además del dashboard operativo con métricas por alcance, leads
-recientes y priorización comercial. El siguiente paso de validación es ejecutar
-el smoke E2E con un proyecto Supabase válido antes de comenzar Settings y
-control de administración.
+recientes y priorización comercial. El siguiente paso es ejecutar el contrato
+RLS y el recorrido E2E completo con un proyecto Supabase válido y un usuario
+demo.
 
 ## Puesta en marcha
 
@@ -46,6 +46,7 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run test:e2e
 ```
 
 Consulta [`docs/development.md`](docs/development.md) para el entorno de
