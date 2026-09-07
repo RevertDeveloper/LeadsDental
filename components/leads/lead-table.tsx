@@ -6,6 +6,7 @@ import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
 import { DeleteLeadDialog } from "@/components/leads/delete-lead-dialog";
 import { Card } from "@/components/ui/card";
 import { LeadPriorityIndicator } from "@/components/leads/lead-priority-indicator";
+import { requiresAttention } from "@/lib/leads/priority";
 import type { LeadWithClinic } from "@/types/leads";
 
 const treatmentLabels = {
@@ -50,11 +51,7 @@ export function LeadTable({ leads }: { leads: LeadWithClinic[] }) {
               return (
                 <tr
                   key={lead.id}
-                  className={
-                    lead.treatment === "implantes" && lead.status === "nuevo"
-                      ? "bg-blue-50/45"
-                      : "bg-card hover:bg-muted/25"
-                  }
+                  className={requiresAttention(lead) ? "bg-blue-50/45" : "bg-card hover:bg-muted/25"}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-start gap-3">
