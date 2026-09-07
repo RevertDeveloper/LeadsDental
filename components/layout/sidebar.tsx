@@ -30,10 +30,10 @@ const navigation: NavigationItem[] = [
   },
   {
     label: "Configuración",
-    href: "/configuracion",
+    href: "/settings/users",
     icon: Settings2,
     allowedRoles: ["ADMIN"],
-    enabled: false,
+    enabled: true,
   },
 ];
 
