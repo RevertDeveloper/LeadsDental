@@ -1133,6 +1133,7 @@ La fase queda implementada y validada localmente.
 - `lib/validation/note-schemas.ts`, `lib/notes/` y `types/notes.ts`
 - `app/(protected)/leads/[id]/actions.ts`
 - `app/(protected)/leads/[id]/page.tsx`
+- `app/page.tsx`
 - `components/notes/`
 - `tests/notes/create-note.test.ts`
 
@@ -1652,6 +1653,10 @@ La fase queda implementada y validada.
 - `npm run build` ✅ — Next.js 16.3.4 compila las rutas protegidas y la Server Action de IA.
 - Prueba real controlada contra OpenAI ⏸️ — pendiente de `OPENAI_API_KEY`,
   proyecto Supabase y disponibilidad del modelo configurado.
+- Smoke Playwright ⏸️ — el helper levanta Next correctamente, pero la sesión
+  Supabase configurada devuelve `AUTHORIZATION_UNAVAILABLE`; queda pendiente
+  ejecutarlo con un proyecto y usuario de demo válidos en la fase de testing
+  integral.
 
 ### Commits de la fase
 
