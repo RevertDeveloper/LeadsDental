@@ -18,7 +18,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 5 — Notas y actividad**
 - [x] **Fase 6 — Auditoría**
 - [x] **Fase 7 — Ficha de lead y pipeline**
-- [ ] **Fase 8 — IA Follow-up**
+- [x] **Fase 8 — IA Follow-up**
 - [ ] **Fase 9 — Dashboard**
 - [ ] **Fase 10 — Settings y control de administración**
 - [ ] **Fase 11 — Hardening, errores y UX**
@@ -1581,6 +1581,90 @@ La siguiente unidad es **Fase 8 — IA Follow-up**, comenzando por `F8-T01`.
   - El rate limit no afecta CRUD.
 - **Testing / Validación:** Unit/integration.
 - **Commit:** `feat(ai): add generation rate limiting`
+
+## Cierre de Fase 8 — 2026-09-07
+
+La fase queda implementada y validada.
+
+- [x] **F8-T01:** prompt versionado `1.0` en español, con límites comerciales
+  explícitos: tono cercano y profesional, formato WhatsApp, sin diagnósticos,
+  recomendaciones médicas, descuentos, disponibilidad inventada ni reservas
+  afirmadas.
+- [x] **F8-T02:** contexto mínimo con nombre, clínica, tratamiento, estado,
+  última interacción y como máximo tres notas recientes recortadas; no se
+  transmiten teléfono, IDs, credenciales, historial clínico ni datos de otros
+  leads.
+- [x] **F8-T03:** SDK oficial `openai` server-only, Responses API, modelo y API
+  key desde entorno server-side, `request_id` UUID, `latency_ms`, salida
+  estructurada `{ message }` y validación Zod.
+- [x] **F8-T04:** Server Action autorizada que crea auditoría de solicitud,
+  genera el borrador y persiste nota IA + `AI_FOLLOWUP_GENERATED` mediante RPC
+  transaccional. Los errores generan `AI_FOLLOWUP_FAILED` y nunca una nota
+  falsa; no se guarda el prompt completo ni se envía WhatsApp.
+- [x] **F8-T05:** botón supervisado en la ficha del lead con bloqueo durante la
+  petición, estado `Generando…`, resultado visible como borrador, actualización
+  de timeline y errores accionables.
+- [x] **F8-T06:** límite deslizante de 10 generaciones por minuto y usuario,
+  resuelto con el `user.id` server-side; no afecta al CRUD ni usa IP como
+  identidad.
+
+### Decisiones registradas
+
+- La nota IA y su auditoría de generación se guardan en una sola transacción
+  PostgreSQL (`persist_ai_followup`), respetando las policies RLS mediante
+  `SECURITY INVOKER`.
+- La API de OpenAI se llama con `store: false`; sólo se auditan metadatos
+  operativos mínimos (`model`, `prompt_version`, `request_id`, timestamps y
+  latencia), nunca el prompt completo.
+- El SDK oficial queda fijado en `openai@6.49.0` para conservar la compatibilidad
+  declarada con Node `>=20.9.0`; la rama 7.x requiere Node 22.
+- El rate limit es un sliding window en memoria del proceso. Es suficiente para
+  el MVP y evita infraestructura adicional; si el despliegue escala a varias
+  instancias deberá sustituirse por un almacén compartido.
+- La IA genera únicamente borradores comerciales. La revisión humana sigue
+  siendo obligatoria y no existe envío automático.
+
+### Archivos incorporados o modificados
+
+- `lib/ai/config.ts`
+- `lib/ai/prompts/followup.ts`
+- `lib/ai/build-followup-context.ts`
+- `types/ai.ts`
+- `lib/ai/openai-client.ts`
+- `lib/ai/generate-followup.ts`
+- `lib/ai/form-state.ts`
+- `lib/ai/rate-limit.ts`
+- `supabase/migrations/20260907120200_ai_followup_persistence.sql`
+- `app/(protected)/leads/[id]/actions.ts`
+- `app/(protected)/leads/[id]/page.tsx`
+- `components/ai/ai-loading-state.tsx`
+- `components/ai/generate-followup-button.tsx`
+- `components/ai/generated-message.tsx`
+- `components/leads/lead-detail.tsx`
+- `tests/ai/`
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 18 archivos, 52 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+- `npm run build` ✅ — Next.js 16.3.4 compila las rutas protegidas y la Server Action de IA.
+- Prueba real controlada contra OpenAI ⏸️ — pendiente de `OPENAI_API_KEY`,
+  proyecto Supabase y disponibilidad del modelo configurado.
+
+### Commits de la fase
+
+- `e051268` `feat(ai): define follow-up prompt contract`
+- `061a960` `feat(ai): build minimal follow-up context`
+- `11db443` `feat(ai): integrate OpenAI Responses API`
+- `fc5b790` `feat(ai): generate and persist follow-up messages`
+- `a257c2e` `feat(ai): add follow-up generation UI`
+- `4ddf4a6` `feat(ai): add generation rate limiting`
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 9 — Dashboard**, comenzando por `F9-T01`.
 
 ---
 

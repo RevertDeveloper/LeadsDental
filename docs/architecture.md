@@ -9,10 +9,10 @@ La aplicación sigue el stack cerrado del roadmap:
 - OpenAI sólo desde código server-side.
 - Vitest para unit tests y Playwright para E2E en la fase de testing integral.
 
-Las Fases 1–3 dejan creado el núcleo de datos, la autenticación interna, la
-autorización server-side y la UI foundation del CRM, sin introducir CRUD de
-leads ni datos demo. Las migraciones viven en `supabase/migrations/` y el seed
-estructural en `supabase/seed.sql`.
+Las Fases 1–8 dejan creado el núcleo de datos, la autenticación interna, la
+autorización server-side, el CRUD de leads, las notas append-only, la auditoría,
+el pipeline comercial y el follow-up IA supervisado. Las migraciones viven en
+`supabase/migrations/` y el seed estructural en `supabase/seed.sql`.
 
 El modelo contiene `clinics`, `profiles`, `user_clinics`, `leads`, `notes` y
 `audit_log`, con enums de dominio, claves foráneas, timestamps e índices para
@@ -27,8 +27,9 @@ se limitan a consultar autorización y no sustituyen las policies.
 ## Límites de secretos
 
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y
-`NEXT_PUBLIC_APP_URL` forman el contrato público. `SUPABASE_SERVICE_ROLE_KEY` y
-`OPENAI_API_KEY` son exclusivamente server-side y no se consumen todavía.
+`NEXT_PUBLIC_APP_URL` forman el contrato público. `SUPABASE_SERVICE_ROLE_KEY`,
+`OPENAI_API_KEY` y `OPENAI_MODEL` son exclusivamente server-side. La API de
+OpenAI se consume sólo desde `lib/ai/` protegido con `server-only`.
 
 El contrato de secretos vive en `lib/config/server-env.ts`, protegido por
 `server-only`; el módulo público `lib/config/env.ts` no contiene esas claves.
@@ -38,7 +39,8 @@ cliente service-role en browser ni bypass de RLS. Las rutas privadas heredan
 `app/(protected)/layout.tsx`, que resuelve el usuario activo en server-side y
 comparte sidebar, cabecera, logout y contexto de clínicas.
 
-La UI foundation usa tokens semánticos en `app/globals.css`, primitives
-reutilizables en `components/ui/`, y badges que combinan texto con el color de
-la clínica o el estado del lead. El dashboard inicial muestra un estado vacío
-explícito hasta que la Fase 4 incorpore datos reales.
+La UI usa tokens semánticos en `app/globals.css`, primitives reutilizables en
+`components/ui/`, badges que combinan texto con el color de la clínica o el
+estado del lead y componentes IA con estados de carga, error y revisión humana.
+La persistencia IA usa `persist_ai_followup` con `SECURITY INVOKER` para que la
+nota y su auditoría de generación sean atómicas bajo RLS.
