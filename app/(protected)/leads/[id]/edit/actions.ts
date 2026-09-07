@@ -29,7 +29,9 @@ export async function updateLeadAction(
       return { message: error.message };
     }
 
-    return { message: "No se pudo actualizar el lead. Inténtalo de nuevo." };
+    return {
+      message: "No se ha podido guardar el lead. Comprueba los datos e inténtalo de nuevo.",
+    };
   }
 
   if (result.ok) {

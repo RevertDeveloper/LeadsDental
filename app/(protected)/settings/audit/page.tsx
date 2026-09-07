@@ -3,6 +3,7 @@ import { ChevronRight, ClipboardCheck } from "lucide-react";
 
 import { AuditLogTable } from "@/components/settings/audit-log-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FeedbackState } from "@/components/ui/feedback-state";
 import { listAuditLog } from "@/lib/audit/list-audit-log";
 import { requireRole } from "@/lib/permissions";
 
@@ -33,7 +34,16 @@ export default async function AuditSettingsPage() {
       <Card className="overflow-hidden">
         <CardHeader><CardTitle>Actividad reciente</CardTitle><CardDescription>Se muestran hasta 100 eventos. El registro es de solo lectura y omite secretos y prompts.</CardDescription></CardHeader>
         <CardContent className="p-0">
-          {entries.length > 0 ? <AuditLogTable entries={entries} /> : <div className="px-6 pb-8 text-sm text-muted-foreground">Todavía no hay eventos de auditoría.</div>}
+          {entries.length > 0 ? (
+            <AuditLogTable entries={entries} />
+          ) : (
+            <FeedbackState
+              variant="empty"
+              title="Todavía no hay eventos de auditoría"
+              description="Las acciones relevantes aparecerán aquí cuando el equipo empiece a trabajar."
+              className="m-6"
+            />
+          )}
         </CardContent>
       </Card>
     </div>

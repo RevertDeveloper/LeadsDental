@@ -8,6 +8,7 @@ import {
   type DeleteLeadState,
 } from "@/app/(protected)/leads/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { ActionFeedback } from "@/components/ui/action-feedback";
 
 export function DeleteLeadDialog({
   leadId,
@@ -79,9 +80,9 @@ export function DeleteLeadDialog({
               junto con sus notas y trazabilidad.
             </p>
             {state.message ? (
-              <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+              <ActionFeedback variant="error" className="mt-4 px-3 py-2 text-sm">
                 {state.message}
-              </p>
+              </ActionFeedback>
             ) : null}
             <form action={formAction} className="mt-6 flex justify-end gap-2">
               <input type="hidden" name="lead_id" value={leadId} />

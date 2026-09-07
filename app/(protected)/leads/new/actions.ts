@@ -31,7 +31,9 @@ export async function createLeadAction(
       return { message: error.message };
     }
 
-    return { message: "No se pudo crear el lead. Inténtalo de nuevo." };
+    return {
+      message: "No se ha podido guardar el lead. Comprueba los datos e inténtalo de nuevo.",
+    };
   }
 
   if (result.ok) {

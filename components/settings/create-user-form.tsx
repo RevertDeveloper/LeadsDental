@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { createUserAction, type UserAdminState } from "@/app/(protected)/settings/users/actions";
 import type { AuthClinic } from "@/types/auth";
 import { Button } from "@/components/ui/button";
+import { ActionFeedback } from "@/components/ui/action-feedback";
 
 const initialState: UserAdminState = {};
 
@@ -47,7 +48,14 @@ export function CreateUserForm({ clinics }: { clinics: AuthClinic[] }) {
         <Button type="submit" disabled={pending}>{pending ? "Enviando invitación…" : "Enviar invitación"}</Button>
         <p className="text-xs leading-5 text-muted-foreground">La persona recibirá un enlace seguro para activar su acceso.</p>
       </div>
-      {state.message ? <p className={state.success ? "text-sm text-emerald-700 lg:col-span-2" : "text-sm text-destructive lg:col-span-2"} role={state.success ? "status" : "alert"}>{state.message}</p> : null}
+      {state.message ? (
+        <ActionFeedback
+          variant={state.success ? "success" : "error"}
+          className="lg:col-span-2"
+        >
+          {state.message}
+        </ActionFeedback>
+      ) : null}
     </form>
   );
 }

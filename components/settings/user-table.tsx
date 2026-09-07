@@ -5,6 +5,8 @@ import { UserRoundX } from "lucide-react";
 
 import { deactivateUserAction, type UserAdminState } from "@/app/(protected)/settings/users/actions";
 import { Button } from "@/components/ui/button";
+import { ActionFeedback } from "@/components/ui/action-feedback";
+import { FeedbackState } from "@/components/ui/feedback-state";
 import type { AdminUserRecord } from "@/lib/users";
 
 const roleLabels = {
@@ -14,6 +16,17 @@ const roleLabels = {
 } as const;
 
 export function UserTable({ users, currentUserId }: { users: AdminUserRecord[]; currentUserId: string }) {
+  if (users.length === 0) {
+    return (
+      <FeedbackState
+        variant="empty"
+        title="Todavía no hay usuarios"
+        description="Invita a la primera persona del equipo para empezar a gestionar accesos."
+        className="m-6"
+      />
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[720px] text-left text-sm">
@@ -69,7 +82,14 @@ function UserRow({ user, currentUserId }: { user: AdminUserRecord; currentUserId
               <UserRoundX aria-hidden="true" />
               {pending ? "Desactivando…" : "Desactivar"}
             </Button>
-            {state.message ? <span className="text-xs text-destructive">{state.message}</span> : null}
+            {state.message ? (
+              <ActionFeedback
+                variant={state.success ? "success" : "error"}
+                className="px-3 py-2 text-left text-xs leading-5"
+              >
+                {state.message}
+              </ActionFeedback>
+            ) : null}
           </form>
         ) : (
           <span className="text-xs text-muted-foreground">{isSelf ? "Sesión actual" : "Sin acciones"}</span>

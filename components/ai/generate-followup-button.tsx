@@ -5,6 +5,7 @@ import { Check, Sparkles } from "lucide-react";
 
 import { AiLoadingState } from "@/components/ai/ai-loading-state";
 import { GeneratedMessage } from "@/components/ai/generated-message";
+import { ActionFeedback } from "@/components/ui/action-feedback";
 import { buttonVariants } from "@/components/ui/button";
 import type { GenerateFollowupState } from "@/lib/ai/form-state";
 
@@ -42,15 +43,15 @@ export function GenerateFollowupButton({
       </form>
 
       {state.message ? (
-        <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-800" role="alert">
+        <ActionFeedback variant="error" className="mt-3 px-3 py-2 text-xs leading-5">
           {state.message}
-        </p>
+        </ActionFeedback>
       ) : null}
 
       {state.success && !state.generatedMessage ? (
-        <p className="mt-3 text-xs font-medium text-emerald-700" role="status">
+        <ActionFeedback variant="success" className="mt-3 px-3 py-2 text-xs leading-5">
           Borrador generado y añadido a la actividad.
-        </p>
+        </ActionFeedback>
       ) : null}
 
       {state.generatedMessage ? (

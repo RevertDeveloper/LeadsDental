@@ -5,6 +5,7 @@ import { Check, LoaderCircle } from "lucide-react";
 
 import { leadStatuses } from "@/components/leads/lead-status-badge";
 import { buttonVariants } from "@/components/ui/button";
+import { ActionFeedback } from "@/components/ui/action-feedback";
 import type { LeadStatusFormState } from "@/lib/leads/status-form-state";
 import type { LeadStatus } from "@/types/leads";
 
@@ -71,13 +72,13 @@ export function LeadStatusSelector({
         </button>
       </div>
       {state.message ? (
-        <p className="text-xs font-medium text-red-700" role="alert">
+        <ActionFeedback variant="error" className="px-3 py-2 text-xs leading-5">
           {state.message}
-        </p>
+        </ActionFeedback>
       ) : state.success ? (
-        <p className="text-xs font-medium text-emerald-700" role="status">
+        <ActionFeedback variant="success" className="px-3 py-2 text-xs leading-5">
           Estado actualizado y auditado.
-        </p>
+        </ActionFeedback>
       ) : (
         <p className="text-xs text-muted-foreground">El cambio queda registrado en auditoría.</p>
       )}

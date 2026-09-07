@@ -110,7 +110,7 @@ export async function generateFollowupAction(
 
     return {
       revision: previousState.revision ?? 0,
-      message: "No se pudo generar el mensaje. Inténtalo de nuevo.",
+      message: "No se ha podido generar el mensaje. El lead no se ha modificado.",
     };
   }
 

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { MessageCircle, PhoneCall, Sparkles } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { ActionFeedback } from "@/components/ui/action-feedback";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { NoteFormState } from "@/lib/notes/form-state";
 import { noteTypeSchema } from "@/lib/validation/note-schemas";
@@ -130,15 +131,15 @@ function NoteFormFields({
           </label>
 
           {state.message ? (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+            <ActionFeedback variant="error">
               {state.message}
-            </p>
+            </ActionFeedback>
           ) : null}
 
           {state.success ? (
-            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">
+            <ActionFeedback variant="success">
               Actividad registrada en la timeline.
-            </p>
+            </ActionFeedback>
           ) : null}
 
           <div className="flex justify-end">

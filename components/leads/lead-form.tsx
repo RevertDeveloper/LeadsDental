@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { buttonVariants } from "@/components/ui/button";
+import { ActionFeedback } from "@/components/ui/action-feedback";
 import {
   Card,
   CardContent,
@@ -231,9 +232,9 @@ export function LeadForm({ action, clinics, lead }: LeadFormProps) {
       ) : null}
 
       {state.message && !hasDuplicates ? (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+        <ActionFeedback variant="error">
           {state.message}
-        </p>
+        </ActionFeedback>
       ) : null}
 
       <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">

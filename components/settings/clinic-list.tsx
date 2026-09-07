@@ -1,9 +1,20 @@
 import { CheckCircle2, MapPin, Palette, XCircle } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { FeedbackState } from "@/components/ui/feedback-state";
 import type { AuthClinic } from "@/types/auth";
 
 export function ClinicList({ clinics }: { clinics: AuthClinic[] }) {
+  if (clinics.length === 0) {
+    return (
+      <FeedbackState
+        variant="empty"
+        title="No hay clínicas configuradas"
+        description="La configuración todavía no contiene ningún centro activo."
+      />
+    );
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {clinics.map((clinic) => (
