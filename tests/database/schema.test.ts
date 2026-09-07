@@ -78,4 +78,18 @@ describe("CRM database contract", () => {
     expect(seed).not.toContain("insert into public.leads");
     expect(seed).not.toContain("insert into auth.users");
   });
+
+  it("keeps AI note and generated audit in one database operation", async () => {
+    const aiPersistence = await readRepositoryFile(
+      "supabase/migrations/20260907120200_ai_followup_persistence.sql",
+    );
+
+    expect(aiPersistence).toContain("create or replace function public.persist_ai_followup");
+    expect(aiPersistence).toContain("returns public.notes");
+    expect(aiPersistence).toContain("security invoker");
+    expect(aiPersistence).toContain("insert into public.notes");
+    expect(aiPersistence).toContain("insert into public.audit_log");
+    expect(aiPersistence).toContain("'AI_FOLLOWUP_GENERATED'");
+    expect(aiPersistence).toContain("grant execute on function public.persist_ai_followup");
+  });
 });
