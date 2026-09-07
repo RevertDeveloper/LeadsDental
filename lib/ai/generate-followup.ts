@@ -11,6 +11,7 @@ import {
   type OpenAIClientDependencies,
   type OpenAIResponsesClient,
 } from "@/lib/ai/openai-client";
+import { checkAiGenerationRateLimit } from "@/lib/ai/rate-limit";
 import { getLeadById } from "@/lib/leads/get-lead";
 import { listLeadNotes } from "@/lib/notes/list-notes";
 import { requireClinicAccess } from "@/lib/permissions";
@@ -35,6 +36,7 @@ export type GenerateAndPersistFollowupDependencies =
     getSupabase?: () => Promise<SupabaseClient>;
     createAuditEntry?: typeof createAuditEntry;
     generate?: typeof generateFollowupMessage;
+    checkRateLimit?: typeof checkAiGenerationRateLimit;
   };
 
 export type GenerateAndPersistFollowupResult =
@@ -46,6 +48,7 @@ export type GenerateAndPersistFollowupResult =
         | "LEAD_NOT_FOUND"
         | "AUDIT_ERROR"
         | "GENERATION_FAILED"
+        | "RATE_LIMITED"
         | "DATABASE_ERROR";
       message: string;
     };
@@ -112,6 +115,17 @@ export async function generateAndPersistFollowup(
 
   const authorize = dependencies.authorize ?? requireClinicAccess;
   const user = await authorize(lead.clinic_id);
+  const checkRateLimit = dependencies.checkRateLimit ?? checkAiGenerationRateLimit;
+  const rateLimit = checkRateLimit(user.id, (dependencies.now ?? Date.now)());
+
+  if (!rateLimit.allowed) {
+    return {
+      ok: false,
+      code: "RATE_LIMITED",
+      message: `Has alcanzado el límite de generaciones. Vuelve a intentarlo en ${rateLimit.retryAfterSeconds} s.`,
+    };
+  }
+
   const getNotes = dependencies.listNotes ?? listLeadNotes;
   const notes = await getNotes(lead.id);
   const context = buildFollowupContext(lead, notes);

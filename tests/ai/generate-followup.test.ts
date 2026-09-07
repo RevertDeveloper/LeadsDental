@@ -129,4 +129,22 @@ describe("generateAndPersistFollowup", () => {
     expect(deps.getLead).not.toHaveBeenCalled();
     expect(deps.audit).not.toHaveBeenCalled();
   });
+
+  it("rejects a user over the limit before reading notes or calling OpenAI", async () => {
+    const deps = dependencies({
+      checkRateLimit: vi.fn().mockReturnValue({
+        allowed: false,
+        retryAfterSeconds: 12,
+      }),
+    });
+
+    await expect(generateAndPersistFollowup(leadId, deps)).resolves.toMatchObject({
+      ok: false,
+      code: "RATE_LIMITED",
+      message: "Has alcanzado el límite de generaciones. Vuelve a intentarlo en 12 s.",
+    });
+    expect(deps.listNotes).not.toHaveBeenCalled();
+    expect(deps.generate).not.toHaveBeenCalled();
+    expect(deps.audit).not.toHaveBeenCalled();
+  });
 });
