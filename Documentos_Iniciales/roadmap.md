@@ -20,7 +20,7 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 7 — Ficha de lead y pipeline**
 - [x] **Fase 8 — IA Follow-up**
 - [ ] **Fase 9 — Dashboard**
-- [ ] **Fase 10 — Settings y control de administración**
+- [x] **Fase 10 — Settings y control de administración**
 - [ ] **Fase 11 — Hardening, errores y UX**
 - [ ] **Fase 12 — Testing integral**
 - [ ] **Fase 13 — Demo Data**
@@ -1891,6 +1891,47 @@ pendiente hasta completar esa validación.
 - **Commit:** `feat(audit): add audit log viewer`
 
 ---
+
+### Cierre de Fase 10 — 2026-09-07
+
+La fase queda implementada y validada localmente.
+
+- [x] **F10-T01:** administración de usuarios internos en `/settings/users`, protegida para ADMIN, con listado de rol/estado/clínicas, invitación por email mediante Supabase Auth, asignación de clínicas y desactivación segura.
+- [x] **F10-T02:** configuración de clínicas en `/settings/clinics`, con clínicas, ciudad, color corporativo y estado. No se añade creación libre de clínicas en el MVP.
+- [x] **F10-T03:** visor de auditoría ADMIN en `/settings/audit`, de solo lectura, con actor, fecha, acción, entidad, ID y detalles expandibles. Los campos sensibles, prompts y contenidos se filtran antes de renderizar.
+
+### Archivos incorporados
+
+- `lib/supabase/admin.ts`, `lib/users/index.ts` y los módulos de `app/(protected)/settings/`.
+- `components/settings/` y `lib/audit/list-audit-log.ts`.
+- Tests de permisos y redacción en `tests/auth/`.
+
+### Decisiones registradas
+
+- Todas las Server Actions vuelven a resolver `requireRole("ADMIN")`; el sidebar y las páginas no son el perímetro de seguridad.
+- Las operaciones de invitación, perfil y asignación usan un cliente `server-only` con service role únicamente después de la autorización ADMIN.
+- La creación usa invitación de Supabase Auth: no se almacenan ni muestran contraseñas iniciales y no se habilita registro público.
+- Un administrador no puede desactivar su propia cuenta.
+- La auditoría es append-only y el visor no permite editar eventos ni expone prompts, mensajes, claves o tokens.
+
+### Validación ejecutada
+
+- `npm test -- --run` ✅ — 22 archivos, 65 tests.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+- `npm run build` ✅ — Next.js 16.3.4 compila `/settings/users`, `/settings/clinics` y `/settings/audit` como rutas dinámicas protegidas.
+- Smoke remoto con Supabase real ⏸️ — pendiente de configurar un proyecto Supabase válido y usuarios demo; el entorno local aún contiene el dominio placeholder documentado en el cierre de Fase 9.
+
+### Commits de la fase
+
+- `9ec2b7d` `feat(settings): add user administration`
+- `748122b` `feat(settings): add clinic configuration`
+- `cbf8029` `feat(audit): add audit log viewer`
+
+### Siguiente fase
+
+La siguiente unidad definida por el roadmap es **Fase 11 — Hardening, errores y UX**, comenzando por `F11-T01`. La validación remota de la Fase 9 permanece pendiente y deberá ejecutarse cuando exista un proyecto Supabase válido.
 
 # FASE 11 — Hardening, errores y UX
 
