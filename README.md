@@ -6,8 +6,12 @@ Clínica Dental Vitalis. El desarrollo sigue el roadmap de
 
 ## Estado
 
-Fase 12 — Testing integral: implementación local terminada; pendientes los
-gates RLS y E2E contra un proyecto Supabase válido.
+MVP completado y publicado en producción. Las Fases 14, 15 y 16 están cerradas
+con validación técnica, documentación de entrega y checklist de demo.
+
+Producción: <https://crmleads.carlosrevert.es/login>
+
+Repositorio: <https://github.com/RevertDeveloper/LeadsDental>
 
 La base actual incluye Next.js App Router, TypeScript estricto, Tailwind CSS,
 shadcn/ui, contrato de entorno con Zod, clientes Supabase SSR, el esquema CRM
@@ -33,11 +37,11 @@ prefijo `NEXT_PUBLIC_`. Para provisionar los tres usuarios demo también debes
 definir `DEMO_USER_PASSWORD` localmente con 12 caracteres o más; nunca se
 versiona ni se muestra en logs.
 
-Configuración remota pendiente: crea el proyecto Supabase, aplica las
-migraciones de `supabase/migrations/` y `supabase/seed.sql`, completa las
-variables reales en `.env` y ejecuta `npm run demo:users`. La URL pública
-objetivo es `https://crmleads.carlosrevert.es`; el DNS se configura cuando el
-proyecto Vercel tenga asignado su destino exacto.
+La configuración remota de Supabase, los usuarios demo y el dataset funcional
+están preparados. Consulta
+[`docs/production-deployment.md`](docs/production-deployment.md) para el
+despliegue en Vercel, la configuración de ClouDNS, Supabase Auth y la
+validación final.
 
 Comprobaciones locales:
 
@@ -52,6 +56,36 @@ npm run test:e2e
 Consulta [`docs/development.md`](docs/development.md) para el entorno de
 desarrollo y [`docs/architecture.md`](docs/architecture.md) para los límites
 arquitectónicos de esta fase.
+
+## Funcionalidades principales
+
+- CRM de leads con búsqueda, filtros y pipeline comercial.
+- Scope por clínica para ADMIN, CLINIC_MANAGER y RECEPTIONIST.
+- Detección de duplicados por teléfono sin merge automático.
+- Clínica actual editable conservando la clínica original.
+- Notas append-only y timeline de actividad.
+- Soft delete y auditoría de operaciones relevantes.
+- Dashboard operativo con priorización de implantes nuevos.
+- Follow-up mediante OpenAI desde servidor, como borrador para revisión humana.
+
+## Decisiones de producto
+
+- La clínica puede cambiarse, pero se conserva `original_clinic_id`.
+- Los duplicados requieren decisión humana; nunca se fusionan automáticamente.
+- Las notas no se editan ni se borran.
+- La IA no diagnostica, no inventa disponibilidad ni envía mensajes.
+- Las claves sensibles nunca llegan al navegador.
+
+## Entrega
+
+- Producción: [`docs/production-deployment.md`](docs/production-deployment.md)
+- Guion de demo: [`docs/demo-script.md`](docs/demo-script.md)
+- Arquitectura: [`docs/architecture.md`](docs/architecture.md)
+- Auditoría de seguridad: [`docs/security-audit.md`](docs/security-audit.md)
+
+Con más tiempo, el siguiente trabajo sería post-MVP: próximos seguimientos,
+analytics de conversión, importación Excel e integraciones de entrada. Estas
+capacidades quedan fuera del MVP.
 
 ## Estructura
 

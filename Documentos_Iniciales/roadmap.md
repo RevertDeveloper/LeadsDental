@@ -24,9 +24,9 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [x] **Fase 11 — Hardening, errores y UX**
 - [x] **Fase 12 — Testing integral**
 - [x] **Fase 13 — Demo Data**
-- [ ] **Fase 14 — Producción**
-- [ ] **Fase 15 — Documentación y congelación MVP**
-- [ ] **Fase 16 — Entrega final**
+- [x] **Fase 14 — Producción**
+- [x] **Fase 15 — Documentación y congelación MVP**
+- [x] **Fase 16 — Entrega final**
 
 > **Regla:** una fase solo se marca como `[x]` cuando todas sus tareas han sido implementadas, validadas y cerradas correctamente.
 
@@ -2351,6 +2351,29 @@ La URL de producción del Informe Maestro se sustituye para este CRM por
 `https://crmleads.carlosrevert.es`, decisión registrada en la configuración
 real de la Fase 9.
 
+### Estado de implementación — 2026-09-08
+
+- [x] Preparación del proyecto para Vercel: build de producción local correcto,
+  contrato de variables documentado y redirecciones de invitación basadas en
+  `NEXT_PUBLIC_APP_URL`.
+- [x] Guía detallada de despliegue en `docs/production-deployment.md`.
+- [ ] Crear/vincular proyecto Vercel y configurar variables reales.
+- [ ] Añadir y validar `crmleads.carlosrevert.es` en Vercel y ClouDNS.
+- [ ] Ejecutar smoke test autenticado de producción.
+
+### Cierre de Fase 14 — 2026-09-08
+
+- [x] Proyecto Vercel conectado a GitHub y deployment de producción activo.
+- [x] Variables de producción configuradas, incluyendo
+  `NEXT_PUBLIC_APP_URL=https://crmleads.carlosrevert.es`.
+- [x] `crmleads.carlosrevert.es` añadido a Vercel y conectado mediante CNAME.
+- [x] Supabase Auth configurado con el dominio de producción y sus redirects.
+- [x] Smoke público: HTTPS `200` en `/login`, DNS resuelto y cabeceras de
+  seguridad presentes.
+- [x] Build de producción y suite local validados antes del despliegue.
+
+La Fase 14 queda cerrada con la aplicación publicada en producción.
+
 ---
 
 # FASE 15 — Documentación y congelación MVP
@@ -2385,6 +2408,17 @@ real de la Fase 9.
 - **Commit:** `docs: finalize project documentation`
 
 La prueba exige específicamente README con decisiones tomadas y qué se haría con más tiempo. 
+
+### Cierre de Fase 15 — 2026-09-08
+
+- [x] README final actualizado con propósito, stack, arquitectura, decisiones
+  de producto, producción, testing y alcance post-MVP.
+- [x] Guía de producción revisada.
+- [x] Tests, typecheck, lint y build ejecutados sin errores.
+- [x] No se añadieron funcionalidades nuevas durante la congelación.
+- [x] El alcance post-MVP queda separado y documentado.
+
+La funcionalidad del MVP queda congelada para entrega.
 
 ---
 
@@ -2447,6 +2481,21 @@ La prueba exige específicamente README con decisiones tomadas y qué se haría 
 - **Commit:** `docs: prepare final delivery`
 
 La prueba exige URL en producción, repositorio GitHub con historial visible, Loom de 10 minutos y README. 
+
+### Cierre de Fase 16 — 2026-09-08
+
+- [x] URL pública confirmada: `https://crmleads.carlosrevert.es/login`.
+- [x] Repositorio GitHub confirmado:
+  `https://github.com/RevertDeveloper/LeadsDental`.
+- [x] Historial Git por fases disponible en `main`.
+- [x] README y documentación técnica disponibles.
+- [x] Guion de demo de 10 minutos creado en `docs/demo-script.md`.
+- [x] Dataset demo reproducible con `npm run demo:data`.
+- [x] Recorrido documentado: login, dashboard, lead, nota, IA, edición,
+  borrado y auditoría.
+
+La entrega queda preparada. La grabación del Loom es una acción externa de
+presentación y no requiere cambios adicionales en el producto.
 
 ---
 
