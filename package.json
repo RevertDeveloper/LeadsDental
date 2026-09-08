@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "demo:users": "node --env-file=.env --import tsx scripts/seed-demo-users.ts",
+    "demo:data": "node --env-file=.env --import tsx scripts/seed-demo-data.ts",
     "test:watch": "vitest"
   },
   "dependencies": {

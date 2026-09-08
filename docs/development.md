@@ -69,6 +69,16 @@ La misma comprobación está disponible desde Vitest en
 definida. No se considera un RLS validado hasta que ese test se ejecute contra
 la base real.
 
+Después de provisionar los usuarios demo, carga el dataset funcional con:
+
+```bash
+npm run demo:data
+```
+
+El comando crea 15 leads demo, cinco por clínica, notas de actividad y un
+duplicado intencionado. Es idempotente y conserva los datos existentes; usa la
+service role sólo desde este script local server-side.
+
 ## Flujo Git
 
 1. Trabaja en una rama descriptiva basada en `main`.

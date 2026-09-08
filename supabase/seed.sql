@@ -1,4 +1,6 @@
 -- Datos estructurales del MVP. No crea usuarios ni leads demo.
+-- Tras crear los usuarios demo, ejecuta `npm run demo:data` para cargar el
+-- dataset funcional idempotente en la base remota.
 -- Es idempotente y conserva cualquier clínica adicional creada después.
 
 insert into public.clinics (name, city, slug, color, active)

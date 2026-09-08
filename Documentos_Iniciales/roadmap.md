@@ -22,8 +22,8 @@ Lee el roadmap completo, identifica la fase que toca implementar y ponte a traba
 - [ ] **Fase 9 — Dashboard**
 - [x] **Fase 10 — Settings y control de administración**
 - [x] **Fase 11 — Hardening, errores y UX**
-- [ ] **Fase 12 — Testing integral**
-- [ ] **Fase 13 — Demo Data**
+- [x] **Fase 12 — Testing integral**
+- [x] **Fase 13 — Demo Data**
 - [ ] **Fase 14 — Producción**
 - [ ] **Fase 15 — Documentación y congelación MVP**
 - [ ] **Fase 16 — Entrega final**
@@ -2188,18 +2188,10 @@ La implementación local de las cuatro Tasks está terminada:
   metadata/request ID y fallo de persistencia atómica.
 - **F12-T04** ✅ — configuración Playwright y recorrido browser completo.
 
-La fase se mantiene abierta (`[ ]` en el índice) hasta ejecutar los dos gates
-que dependen de infraestructura externa: el contrato RLS contra una base
-Supabase real y el E2E completo con usuario demo, IA habilitada y datos
-persistidos. Sin esas variables, los runners muestran un skip explícito y no
-una aprobación falsa.
+### Validación ejecutada
 
-### Validación local de Fase 12
-
-- `npm test -- --run` ✅ — 25 archivos, 78 tests correctos; 1 test RLS
-  omitido por no existir `SUPABASE_DB_URL`.
-- `npm run test:e2e` ✅ — configuración Playwright cargada; 1 escenario
-  omitido por faltar `E2E_EMAIL`, `E2E_PASSWORD` y `E2E_AI_ENABLED=true`.
+- `npm test -- --run` ✅ — 25 archivos y 78 tests pasados; el test RLS aparece omitido en la suite general porque requiere configuración remota y se ejecuta explícitamente abajo.
+- `npm run test:e2e` ✅ — 1 escenario pasado con usuario demo, IA habilitada y Chromium instalado.
 - `npm run typecheck` ✅
 - `npm run lint` ✅
 - `git diff --check` ✅
@@ -2213,6 +2205,23 @@ una aprobación falsa.
   externos documentados.
 
 ---
+
+
+## Cierre de Fase 12 — 2026-09-08
+
+Las cuatro tareas están implementadas y los gates externos se han ejecutado contra el proyecto Supabase real. La fase queda cerrada y el siguiente trabajo es **Fase 13 — Demo Data**.
+
+- [x] **F12-T01:** tests de dominio y validación.
+- [x] **F12-T02:** integración CRM, soft delete y contrato RLS real.
+- [x] **F12-T03:** pipeline de IA, errores, rate limit y persistencia.
+- [x] **F12-T04:** recorrido E2E completo con Playwright.
+
+- `node --env-file=.env node_modules/vitest/vitest.mjs run --run tests/integration/rls/rls.test.ts` ✅ — 1 test pasado contra Supabase real.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+- `git diff --check` ✅
+
+La migración `20260908100000_soft_delete_rpc.sql` está aplicada en remoto y el borrado de leads se valida mediante una RPC autorizada. El seed estructural y los usuarios demo necesarios para la prueba están preparados. No se han introducido secretos en Git.
 
 # FASE 13 — Demo Data
 
@@ -2246,6 +2255,50 @@ una aprobación falsa.
 - **Commit:** `feat(demo): add Vitalis demo dataset`
 
 El Informe Maestro propone exactamente un dataset de 15 leads, cinco por clínica, varios estados, dos duplicados detectables y notas. 
+
+## Cierre de Fase 13 — 2026-09-08
+
+La fase queda implementada y validada contra el proyecto Supabase real.
+
+- [x] **F13-T01:** provisionador idempotente `scripts/seed-demo-data.ts` con
+  15 leads demo, cinco por Madrid, Valencia y Sevilla, tratamientos y estados
+  variados, 15 notas de actividad y un duplicado intencionado mediante
+  `duplicate_of`. Los registros usan datos ficticios y no contienen historias
+  clínicas.
+
+### Decisiones registradas
+
+- `supabase/seed.sql` mantiene únicamente el seed estructural de clínicas;
+  los datos funcionales requieren perfiles demo y se cargan con
+  `npm run demo:data`.
+- El provisionador usa `SUPABASE_SERVICE_ROLE_KEY` sólo en un script CLI
+  server-side, valida el entorno con Zod y nunca imprime secretos.
+- La idempotencia se basa en nombres deterministas de los leads y en
+  `metadata.seed_key` para las notas. No borra ni modifica los cinco leads de
+  pruebas que ya existían en la base remota.
+- El duplicado comparte `phone_normalized` con el lead de Madrid y conserva
+  `duplicate_of`; no se realiza ningún merge automático.
+
+### Validación ejecutada
+
+- `npm run demo:data` ✅ — 15 leads y 15 notas creados en Supabase real.
+- Verificación SQL ✅ — 15 leads demo, 5 por clínica, 2 filas con el teléfono
+  normalizado duplicado, 1 relación `duplicate_of` y 15 notas demo.
+- Segunda ejecución de `npm run demo:data` ✅ — 0 leads y 0 notas nuevos.
+- `npm run typecheck` ✅
+- `npm run lint` ✅
+
+### Archivos incorporados o modificados
+
+- `scripts/seed-demo-data.ts`
+- `package.json`
+- `supabase/seed.sql`
+- `docs/development.md`
+
+### Siguiente fase
+
+La siguiente unidad es **Fase 14 — Producción**, comenzando por la
+configuración de Vercel y la publicación del dominio final.
 
 ---
 

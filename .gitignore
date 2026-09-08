@@ -34,7 +34,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
-supabase.com.md
+credenciales_supabase.com.md
 
 # local demo credentials
 /docs/demo-users.md
