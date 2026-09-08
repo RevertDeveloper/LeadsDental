@@ -2,15 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import {
+  Activity,
+  ClipboardList,
+  LayoutDashboard,
+  Settings2,
+  UsersRound,
+  type LucideIcon,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
+
+export type SidebarIconName =
+  | "dashboard"
+  | "leads"
+  | "activity"
+  | "settings"
+  | "audit";
 
 export type SidebarNavItem = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: SidebarIconName;
   disabled?: boolean;
+};
+
+const icons: Record<SidebarIconName, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  leads: UsersRound,
+  activity: Activity,
+  settings: Settings2,
+  audit: ClipboardList,
 };
 
 export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
@@ -19,7 +41,7 @@ export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
   return (
     <nav aria-label="Navegación principal" className="flex min-w-max gap-1 lg:min-w-0 lg:flex-col">
       {items.map((item) => {
-        const Icon = item.icon;
+        const Icon = icons[item.icon];
         const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         const className = cn(

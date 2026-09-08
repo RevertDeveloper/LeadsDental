@@ -15,19 +15,15 @@ function supabaseStub() {
       error: null,
     }),
   };
-  const updateQuery = {
-    update: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    is: vi.fn().mockResolvedValue({ error: null }),
-  };
+  const rpc = vi.fn().mockResolvedValue({
+    data: { id: leadId, deleted_at: "2026-09-07T12:31:00.000Z" },
+    error: null,
+  });
 
   return {
-    from: vi
-      .fn()
-      .mockReturnValueOnce(currentQuery)
-      .mockReturnValueOnce(updateQuery),
+    from: vi.fn().mockReturnValueOnce(currentQuery),
+    rpc,
     currentQuery,
-    updateQuery,
   };
 }
 
@@ -55,11 +51,9 @@ describe("deleteLead", () => {
     expect(createAuditEntry).toHaveBeenCalledWith(
       expect.objectContaining({ action: "LEAD_DELETED", entityId: leadId }),
     );
-    expect(supabase.updateQuery.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        deleted_by: "user-id",
-        updated_by: "user-id",
-      }),
-    );
+    expect(supabase.rpc).toHaveBeenCalledWith("soft_delete_lead", {
+      p_lead_id: leadId,
+      p_actor_user_id: "user-id",
+    });
   });
 });

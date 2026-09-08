@@ -36,6 +36,24 @@ class InMemoryCrm {
   readonly notes = new Map<string, NoteRecord>();
   private sequence = 0;
 
+  async rpc(name: string, args: Record<string, string>) {
+    if (name !== "soft_delete_lead") {
+      return { data: null, error: new Error(`Unknown RPC: ${name}`) };
+    }
+
+    const lead = this.leads.get(args.p_lead_id);
+    if (!lead || lead.deleted_at) {
+      return { data: null, error: null };
+    }
+
+    const deleted = this.update("leads", lead, {
+      deleted_at: "2026-09-07T12:31:00.000Z",
+      deleted_by: args.p_actor_user_id,
+      updated_by: args.p_actor_user_id,
+    });
+    return { data: deleted, error: null };
+  }
+
   from(table: TableName): Query {
     const filters: Array<(row: Row) => boolean> = [];
     let operation: "select" | "insert" | "update" = "select";

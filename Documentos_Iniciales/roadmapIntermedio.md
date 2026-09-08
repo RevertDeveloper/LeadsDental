@@ -46,6 +46,10 @@ Antes de empezar:
   `npm run demo:users` carga explícitamente ese archivo.
 - Comprueba siempre `git status` antes de hacer commit.
 - No subas `.env`, `.env.local`, contraseñas ni `test-results/`.
+- La nota privada `supabase/supabase.com.md` también debe permanecer ignorada.
+  Si contiene claves, no la abras, adjuntes ni copies a documentación. Verifica
+  antes del primer push que `git check-ignore -v supabase/supabase.com.md`
+  muestra una regla de `.gitignore`.
 
 ### Atención: clave OpenAI local
 
@@ -79,7 +83,11 @@ esquema, las políticas RLS y las clínicas estructurales.
 3. En `Project Settings → API`, copia la URL y la anon key.
 4. En `Project Settings → Database`, copia la cadena de conexión directa de
    PostgreSQL. Sustituye la contraseña y codifica caracteres especiales si los
-   contiene. Esa será `SUPABASE_DB_URL`.
+   contiene. Esa será `SUPABASE_DB_URL`. Los corchetes que aparecen en
+   `[YOUR-PASSWORD]` son sólo un marcador visual: elimínalos al sustituir la
+   contraseña. Si la contraseña contiene símbolos reservados para una URL,
+   aplícales percent-encoding. Puedes añadir `?sslmode=require` al final de la
+   URL.
 5. En el `.env` local, sustituye sólo los placeholders:
 
    ```dotenv
@@ -95,29 +103,71 @@ esquema, las políticas RLS y las clínicas estructurales.
 
    No copies esos valores a `.env.example`.
 
-6. En Supabase, abre `SQL Editor` y ejecuta en este orden:
-
-   ```text
-   supabase/migrations/20260907120000_initial_crm_schema.sql
-   supabase/migrations/20260907120100_rls_policies.sql
-   supabase/migrations/20260907120200_ai_followup_persistence.sql
-   supabase/seed.sql
-   ```
-
-   Puedes pegar cada archivo en una consulta separada. Si usas `psql`, desde
-   la raíz del repositorio ejecuta:
+6. Configura `DEMO_USER_PASSWORD`; no se configura en el dashboard de
+   Supabase ni en Vercel. Es una variable local que el provisionador usa para
+   establecer la contraseña de los tres usuarios demo. En la terminal
+   integrada de VS Code, genera una contraseña sin caracteres problemáticos
+   para un archivo dotenv:
 
    ```bash
-   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \\
-     -f supabase/migrations/20260907120000_initial_crm_schema.sql
-   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \\
-     -f supabase/migrations/20260907120100_rls_policies.sql
-   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 \\
-     -f supabase/migrations/20260907120200_ai_followup_persistence.sql
-   psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+   openssl rand -hex 24
    ```
 
-7. En `Authentication → Providers`, confirma que el proveedor Email está
+   Copia el resultado **una sola vez** en tu `.env`, sin comillas:
+
+   ```dotenv
+   DEMO_USER_PASSWORD=<resultado-de-openssl>
+   ```
+
+   Debe tener al menos 12 caracteres. Consérvala en un gestor de contraseñas.
+   Cada vez que ejecutes `npm run demo:users`, el script asignará ese valor a
+   las tres cuentas demo existentes; por eso no lo cambies salvo que quieras
+   rotar sus contraseñas.
+
+7. Aplica el esquema mediante la CLI de Supabase desde la terminal integrada
+   de VS Code, situada en la raíz del repositorio. Esta es la vía recomendada:
+   conecta el directorio local con el proyecto remoto y registra qué
+   migraciones se han aplicado. GitHub **no** es necesario para ello, y el
+   enlace no publica nada en GitHub.
+
+   ```bash
+   npx supabase@latest init
+   npx supabase@latest login
+   npx supabase@latest link --project-ref <project-ref>
+   npx supabase@latest db push --dry-run
+   npx supabase@latest db push
+   ```
+
+   - `init` crea `supabase/config.toml`; revísalo y versiónalo, pues no debe
+     contener secretos.
+   - `login` abre el flujo de autenticación o solicita un personal access
+     token. El token queda en el almacén de credenciales local, nunca en el
+     repositorio.
+   - `link` pide la contraseña de PostgreSQL de forma interactiva. No la
+     pegues en el comando ni la añadas a `config.toml`.
+   - Comprueba la salida de `--dry-run`: debe listar, en este orden, las tres
+     migraciones de `supabase/migrations/`. Sólo entonces ejecuta el `db push`
+     sin `--dry-run`.
+
+   Tras el `db push`, abre `SQL Editor` en Supabase y ejecuta **sólo** el
+   contenido de `supabase/seed.sql`. Es idempotente y crea las tres clínicas
+   estructurales. El SQL Editor no está conectado automáticamente al
+   repositorio: debes abrir el archivo local, copiar su contenido, pegarlo en
+   una consulta nueva y pulsar `Run`.
+
+   A partir de este punto, no uses SQL Editor ni Table Editor para cambios de
+   esquema o RLS. Crea una migración local, haz commit y aplícala con
+   `supabase db push`; así no se rompe el historial de migraciones remoto.
+   El SQL Editor queda reservado para el seed actual, diagnósticos y pruebas
+   puntuales.
+
+   Si ya hubieras ejecutado una migración directamente en SQL Editor, detente
+   antes de usar `db push`: el historial remoto no la conocerá y habría que
+   crear una línea base o reparar ese historial. En este proyecto nuevo, la
+   solución segura es no ejecutar las migraciones por SQL Editor y seguir el
+   flujo anterior desde el principio.
+
+8. En `Authentication → Providers`, confirma que el proveedor Email está
    habilitado. Los usuarios demo se crean con email confirmado por el script,
    por lo que no necesitas crear cuentas manualmente.
 
@@ -128,6 +178,8 @@ esquema, las políticas RLS y las clínicas estructurales.
   `audit_log`.
 - Existen las funciones RLS y `persist_ai_followup`.
 - Existen las clínicas Madrid, Valencia y Sevilla.
+- La CLI muestra las tres migraciones como aplicadas; una segunda ejecución de
+  `npx supabase@latest db push --dry-run` no propone ninguna.
 - Las variables locales dejan de contener `your-project.supabase.co` o
   placeholders equivalentes.
 
@@ -152,7 +204,8 @@ El script ya está implementado en `scripts/seed-demo-users.ts`.
 ### Cómo hacerlo
 
 1. Define en `.env` una contraseña local de al menos 12 caracteres mediante
-   `DEMO_USER_PASSWORD`.
+   `DEMO_USER_PASSWORD`, tal como se indica en la sección 1. No hace falta
+   crear usuarios en Authentication ni configurar esa variable en Supabase.
 2. Ejecuta:
 
    ```bash
@@ -195,6 +248,40 @@ Este paso no debe simularse con Vitest. Ejecuta el SQL real contra Supabase:
 psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/rls.sql
 ```
 
+El comando anterior presupone que `SUPABASE_DB_URL` ya está exportada en la
+sesión y que el cliente `psql` está instalado. El archivo `.env` no se carga
+automáticamente por Bash. Para ejecutar el test de Vitest, instala una vez el
+cliente PostgreSQL si no lo tienes y deja que Node cargue `.env` de forma
+segura:
+
+```bash
+# Ubuntu/Debian, sólo si `command -v psql` no devuelve una ruta
+sudo apt update
+sudo apt install -y postgresql-client
+
+node --env-file=.env node_modules/vitest/vitest.mjs run --run \
+  tests/integration/rls/rls.test.ts
+```
+
+No uses `SUPABASE_DB_URL="$SUPABASE_DB_URL"` para cargar `.env`: esa expresión
+sólo copia una variable de shell ya existente, y si está vacía el test se
+omite. Tampoco dupliques la barra de continuación; en Bash es una sola `\` al
+final de la línea.
+
+Si tu red no permite la conexión directa de PostgreSQL o prefieres evitar
+configurar `psql`, abre `SQL Editor`, pega el contenido completo de
+`supabase/tests/rls.sql` y pulsa `Run`. Este test contiene `BEGIN` y
+`ROLLBACK`, por lo que sus usuarios y datos temporales no permanecen en el
+proyecto al terminar. No ejecutes fragmentos sueltos.
+
+Si aparece `password authentication failed for user "postgres"`, no es un
+fallo de RLS: revisa que `SUPABASE_DB_URL` use la contraseña actual, sin los
+corchetes del placeholder y con los símbolos percent-encoded. Si no estás
+seguro de la contraseña o la has expuesto en una salida, rótala en
+`Database → Settings` de Supabase, actualiza sólo el `.env` local y espera a
+que el cambio se propague antes de repetir el test. Nunca pegues la URL
+completa en una incidencia o mensaje.
+
 El script crea datos temporales y hace `ROLLBACK` al terminar. Debe comprobar:
 
 - ADMIN ve las tres clínicas.
@@ -207,8 +294,8 @@ El script crea datos temporales y hace `ROLLBACK` al terminar. Debe comprobar:
 También puedes ejecutar el test Vitest equivalente:
 
 ```bash
-SUPABASE_DB_URL="$SUPABASE_DB_URL" \\
-npm test -- --run tests/integration/rls/rls.test.ts
+node --env-file=.env node_modules/vitest/vitest.mjs run --run \
+  tests/integration/rls/rls.test.ts
 ```
 
 El resultado correcto es `1 passed`, no `1 skipped`.
@@ -218,23 +305,43 @@ El resultado correcto es `1 passed`, no `1 skipped`.
 El E2E usa navegador y recorre el flujo de la demo. Debe ejecutarse con una
 sesión real y con OpenAI disponible; no cambies el test para ocultar errores.
 
+La primera vez que ejecutes Playwright en una máquina, instala el navegador
+Chromium que utiliza el runner:
+
+```bash
+npx playwright install chromium
+```
+
+Si la instalación o el lanzamiento avisa de dependencias del sistema ausentes
+en Ubuntu/Debian, repite con permisos de administrador:
+
+```bash
+npx playwright install --with-deps chromium
+```
+
 1. Comprueba que el `.env` tiene Supabase real y `OPENAI_API_KEY` válida.
 2. Ejecuta Playwright con el usuario administrador:
 
    ```bash
-   E2E_EMAIL='admin@vitalis.demo' \\
-   E2E_PASSWORD='<la-contraseña-local>' \\
-   E2E_AI_ENABLED=true \\
+   set -a
+   . ./.env
+   set +a
+   E2E_EMAIL='admin@vitalis.demo' \
+   E2E_PASSWORD="$DEMO_USER_PASSWORD" \
+   E2E_AI_ENABLED=true \
    npm run test:e2e
    ```
 
 3. Si ya tienes un servidor válido levantado, añade:
 
    ```bash
-   E2E_BASE_URL='http://127.0.0.1:3000' \\
-   E2E_EMAIL='admin@vitalis.demo' \\
-   E2E_PASSWORD='<la-contraseña-local>' \\
-   E2E_AI_ENABLED=true \\
+   set -a
+   . ./.env
+   set +a
+   E2E_BASE_URL='http://127.0.0.1:3000' \
+   E2E_EMAIL='admin@vitalis.demo' \
+   E2E_PASSWORD="$DEMO_USER_PASSWORD" \
+   E2E_AI_ENABLED=true \
    npm run test:e2e
    ```
 
@@ -338,13 +445,40 @@ Haz el commit definido por la fase:
 
 ### 5.1 Conectar GitHub y Vercel
 
-1. Comprueba que el repositorio está en GitHub y que la rama `main` contiene
+1. Publica primero el repositorio local en GitHub. Supabase y GitHub son
+   integraciones independientes: el enlace de la sección 1 ya permite aplicar
+   migraciones desde VS Code aunque todavía no exista un repositorio remoto.
+
+   En GitHub, crea un repositorio vacío privado, sin README, `.gitignore` ni
+   licencia. Copia su URL SSH. En la raíz local, después de revisar que no hay
+   secretos en cambios pendientes, ejecuta:
+
+   ```bash
+   git status --short
+   git diff --check
+   git branch --show-current
+   git add -A
+   git diff --cached --check
+   git commit -m "chore: prepare remote setup"
+   git remote add origin git@github.com:<usuario-o-organizacion>/<repositorio>.git
+   git push -u origin main
+   ```
+
+   Si `git branch --show-current` no devuelve `main`, sustituye el último
+   argumento por el nombre mostrado o renombra la rama antes de empujarla. Si
+   ya existe `origin`, verifica su URL con `git remote -v` en vez de añadirlo
+   otra vez. Antes de `git add -A`, confirma que `.env`, `.env.local` y
+   `supabase/supabase.com.md` están ignorados; no continúes si aparecen en
+   `git status`. Activa Secret Scanning y Push Protection en `Settings →
+   Security` del repositorio recién creado.
+
+2. Comprueba que GitHub contiene el historial y que la rama `main` contiene
    los commits anteriores.
-2. Entra en <https://vercel.com> y selecciona `Add New → Project`.
-3. Importa el repositorio correcto.
-4. Mantén el framework como Next.js.
-5. No añadas secretos al repositorio ni a `next.config.ts`.
-6. Antes del primer deployment, configura en `Settings → Environment
+3. Entra en <https://vercel.com> y selecciona `Add New → Project`.
+4. Importa el repositorio correcto.
+5. Mantén el framework como Next.js.
+6. No añadas secretos al repositorio ni a `next.config.ts`.
+7. Antes del primer deployment, configura en `Settings → Environment
    Variables` estas variables para `Production` y, si quieres probar previews,
    también para `Preview`:
 
@@ -362,7 +496,7 @@ Haz el commit definido por la fase:
    `SUPABASE_DB_URL` tampoco debe exponerse al navegador ni es necesaria para
    el runtime web.
 
-7. Ejecuta el deployment.
+8. Ejecuta el deployment.
 
 ### Resultado esperado
 

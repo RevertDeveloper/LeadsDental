@@ -69,26 +69,23 @@ export async function deleteLead(
 
   const authorize = dependencies.authorize ?? requireClinicAccess;
   const user = await authorize((currentData as Pick<LeadRecord, "clinic_id">).clinic_id);
-  const deletedAt = new Date().toISOString();
-  const { error } = await supabase
-    .from("leads")
-    .update({
-      deleted_at: deletedAt,
-      deleted_by: user.id,
-      updated_by: user.id,
-    })
-    .eq("id", parsed.data)
-    .is("deleted_at", null);
+  const { data: deletedData, error } = await supabase.rpc("soft_delete_lead", {
+    p_lead_id: parsed.data,
+    p_actor_user_id: user.id,
+  });
 
-  if (error) {
+  if (error || !deletedData) {
     return {
       ok: false,
-      code: "DATABASE_ERROR",
-      message: "No se pudo eliminar el lead. Inténtalo de nuevo.",
+      code: error ? "DATABASE_ERROR" : "NOT_FOUND",
+      message: error
+        ? "No se pudo eliminar el lead. Inténtalo de nuevo."
+        : "El lead no existe o ya ha sido eliminado.",
     };
   }
 
   const lead = currentData as LeadRecord;
+  const deletedAt = (deletedData as LeadRecord).deleted_at ?? new Date().toISOString();
   const audit = dependencies.createAuditEntry ?? createAuditEntry;
   const auditResult = await audit({
     actorUserId: user.id,

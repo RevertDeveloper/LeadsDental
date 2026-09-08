@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { deleteLead } from "@/lib/leads/delete-lead";
 import { AuthorizationError } from "@/lib/permissions";
@@ -14,15 +15,10 @@ export async function deleteLeadAction(
   _previousState: DeleteLeadState,
   formData: FormData,
 ): Promise<DeleteLeadState> {
+  let result;
+
   try {
-    const result = await deleteLead(formData.get("lead_id"));
-
-    if (result.ok) {
-      revalidatePath("/leads");
-      return { success: true };
-    }
-
-    return { message: result.message };
+    result = await deleteLead(formData.get("lead_id"));
   } catch (error) {
     if (error instanceof AuthorizationError) {
       return { message: error.message };
@@ -30,4 +26,11 @@ export async function deleteLeadAction(
 
     return { message: "No se pudo eliminar el lead. Inténtalo de nuevo." };
   }
+
+  if (result.ok) {
+    revalidatePath("/leads");
+    redirect("/leads");
+  }
+
+  return { message: result.message };
 }

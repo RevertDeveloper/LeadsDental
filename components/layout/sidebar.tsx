@@ -1,12 +1,5 @@
 import Link from "next/link";
-import {
-  Activity,
-  ClipboardList,
-  LayoutDashboard,
-  Settings2,
-  Sparkles,
-  UsersRound,
-} from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import type { CurrentUser, UserRole } from "@/types/auth";
 import { SidebarNav, type SidebarNavItem } from "@/components/layout/sidebar-nav";
@@ -20,26 +13,26 @@ type NavigationItem = {
 };
 
 const navigation: NavigationItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, enabled: true },
-  { label: "Leads", href: "/leads", icon: UsersRound, enabled: true },
+  { label: "Dashboard", href: "/dashboard", icon: "dashboard", enabled: true },
+  { label: "Leads", href: "/leads", icon: "leads", enabled: true },
   {
     label: "Actividad",
     href: "/actividad",
-    icon: Activity,
+    icon: "activity",
     allowedRoles: ["ADMIN", "CLINIC_MANAGER"],
     enabled: false,
   },
   {
     label: "Configuración",
     href: "/settings/users",
-    icon: Settings2,
+    icon: "settings",
     allowedRoles: ["ADMIN"],
     enabled: true,
   },
   {
     label: "Auditoría",
     href: "/settings/audit",
-    icon: ClipboardList,
+    icon: "audit",
     allowedRoles: ["ADMIN"],
     enabled: true,
   },

@@ -36,6 +36,8 @@ test.describe("Vitalis CRM demo flow", () => {
     await page.getByLabel("Fuente del lead").selectOption("web");
     await page.getByLabel("Estado").selectOption("nuevo");
     await page.getByRole("button", { name: "Crear lead" }).click();
+    await expect(page).toHaveURL(/\/leads\/[^/]+\/edit$/);
+    await page.getByRole("link", { name: /Volver a Leads/ }).click();
     await expect(page).toHaveURL(/\/leads$/);
     await expect(page.getByRole("link", { name: initialName, exact: true })).toBeVisible();
 

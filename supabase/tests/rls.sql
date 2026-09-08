@@ -106,10 +106,28 @@ select set_config(
 
 do $$
 begin
-  if (select count(*) from public.leads) <> 3 then
+  if (
+    select count(*)
+    from public.leads
+    where id in (
+      '00000000-0000-0000-0001-000000000001'::uuid,
+      '00000000-0000-0000-0001-000000000002'::uuid,
+      '00000000-0000-0000-0001-000000000003'::uuid
+    )
+  ) <> 3 then
     raise exception 'ADMIN should see all three clinic leads';
   end if;
-  if (select count(*) from public.clinics) <> 3 then
+  if (
+    select count(*)
+    from public.clinics
+    where id in (
+      select madrid_id from rls_test_ids
+      union all
+      select valencia_id from rls_test_ids
+      union all
+      select sevilla_id from rls_test_ids
+    )
+  ) <> 3 then
     raise exception 'ADMIN should see all three clinics';
   end if;
 end;
@@ -123,10 +141,25 @@ select set_config(
 
 do $$
 begin
-  if (select count(*) from public.leads) <> 2 then
+  if (
+    select count(*)
+    from public.leads
+    where id in (
+      '00000000-0000-0000-0001-000000000001'::uuid,
+      '00000000-0000-0000-0001-000000000002'::uuid
+    )
+  ) <> 2 then
     raise exception 'MANAGER should see only assigned clinic leads';
   end if;
-  if (select count(*) from public.clinics) <> 2 then
+  if (
+    select count(*)
+    from public.clinics
+    where id in (
+      select madrid_id from rls_test_ids
+      union all
+      select valencia_id from rls_test_ids
+    )
+  ) <> 2 then
     raise exception 'MANAGER should see only assigned clinics';
   end if;
 end;
@@ -140,20 +173,36 @@ select set_config(
 
 do $$
 begin
-  if (select count(*) from public.leads) <> 1 then
+  if (
+    select count(*)
+    from public.leads
+    where id = '00000000-0000-0000-0001-000000000001'::uuid
+  ) <> 1 then
     raise exception 'RECEPTIONIST should see only their clinic leads';
   end if;
-  if (select count(*) from public.clinics) <> 1 then
+  if (
+    select count(*)
+    from public.clinics
+    where id in (select madrid_id from rls_test_ids)
+  ) <> 1 then
     raise exception 'RECEPTIONIST should see only their clinic';
   end if;
 end;
 $$;
 
-set local role postgres;
+set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  (select admin_id::text from rls_test_ids),
+  true
+);
 
-update public.leads
-set deleted_at = now(), deleted_by = (select admin_id from rls_test_ids)
-where id = '00000000-0000-0000-0001-000000000001';
+select (public.soft_delete_lead(
+  '00000000-0000-0000-0001-000000000001'::uuid,
+  (select admin_id from rls_test_ids)
+)).id;
+
+set local role postgres;
 
 insert into public.notes (lead_id, text, type, created_by)
 select
@@ -172,7 +221,15 @@ select set_config(
 
 do $$
 begin
-  if (select count(*) from public.leads) <> 2 then
+  if (
+    select count(*)
+    from public.leads
+    where id in (
+      '00000000-0000-0000-0001-000000000001'::uuid,
+      '00000000-0000-0000-0001-000000000002'::uuid,
+      '00000000-0000-0000-0001-000000000003'::uuid
+    )
+  ) <> 2 then
     raise exception 'Soft-deleted leads must be hidden from normal queries';
   end if;
 end;

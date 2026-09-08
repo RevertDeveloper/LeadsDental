@@ -87,6 +87,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   } = await supabase.auth.getUser();
 
   if (authError) {
+    // Supabase reports a missing cookie as AuthSessionMissingError. That is
+    // the normal state for the public login page, not an authorization outage.
+    if (authError.name === "AuthSessionMissingError") {
+      return null;
+    }
+
     authorizationUnavailable();
   }
 
