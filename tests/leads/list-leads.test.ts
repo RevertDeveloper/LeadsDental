@@ -28,6 +28,24 @@ describe("lead list filters", () => {
     });
   });
 
+  it("keeps valid filters even when unused select values are sent as empty strings", () => {
+    expect(
+      parseLeadFilters({
+        search: "Ana",
+        clinic_id: madrid,
+        status: "contactado",
+        treatment: "",
+        source: "",
+        sort: "recent",
+      }),
+    ).toEqual({
+      search: "Ana",
+      clinic_id: madrid,
+      status: "contactado",
+      sort: "recent",
+    });
+  });
+
   it("falls back to a safe recent ordering for invalid URL values", () => {
     expect(parseLeadFilters({ status: "not-a-status", sort: "unknown" })).toEqual({
       sort: "recent",

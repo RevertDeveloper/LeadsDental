@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { createAuditEntry } from "@/lib/audit/create-audit-entry";
+import { buildInvitationRedirectUrl } from "@/lib/auth/flow";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { userRoleSchema, type AuthClinic, type UserRole } from "@/types/auth";
 
@@ -35,8 +36,12 @@ function databaseError(message: string): UserAdminResult {
   return { ok: false, message };
 }
 
-export function canDeactivateUser(actorId: string, targetId: string) {
+export function canManageUser(actorId: string, targetId: string) {
   return actorId !== targetId;
+}
+
+export function canDeactivateUser(actorId: string, targetId: string) {
+  return canManageUser(actorId, targetId);
 }
 
 export async function listAdminUsers(): Promise<AdminUserRecord[]> {
@@ -96,6 +101,8 @@ export async function createAdminUser(
   }
 
   const supabase = createSupabaseAdminClient();
+  const normalizedEmail = parsed.data.email.trim().toLowerCase();
+
   const { data: clinics, error: clinicsError } = await supabase
     .from("clinics")
     .select("id")
@@ -106,13 +113,86 @@ export async function createAdminUser(
     return databaseError("Selecciona únicamente clínicas activas válidas.");
   }
 
+  const {
+    data: authUsers,
+    error: authUsersError,
+  } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+
+  if (authUsersError) {
+    return databaseError("No se pudo comprobar si el email ya existe en Vitalis.");
+  }
+
+  const existingAuthUser = (authUsers?.users ?? []).find((user) =>
+    user.email?.trim().toLowerCase() === normalizedEmail,
+  );
+
+  if (existingAuthUser) {
+    const { data: existingProfile, error: existingProfileError } = await supabase
+      .from("profiles")
+      .select("id, active")
+      .eq("id", existingAuthUser.id)
+      .maybeSingle();
+
+    if (existingProfileError) {
+      return databaseError("No se pudo comprobar el estado del usuario existente.");
+    }
+
+    if (existingProfile) {
+      return existingProfile.active
+        ? databaseError(
+            "Este correo ya está asociado a un usuario activo de Vitalis. Puedes gestionarlo desde la tabla de usuarios.",
+          )
+        : databaseError(
+            "Este correo ya existe en Vitalis, pero está desactivado. Reactiva al usuario desde la tabla para volver a darle acceso.",
+          );
+    }
+
+    const { error: profileError } = await supabase.from("profiles").insert({
+      id: existingAuthUser.id,
+      full_name: parsed.data.fullName,
+      role: parsed.data.role,
+      active: true,
+    });
+
+    const { error: assignmentsError } = profileError
+      ? { error: profileError }
+      : await supabase.from("user_clinics").insert(
+          parsed.data.clinicIds.map((clinicId) => ({ user_id: existingAuthUser.id, clinic_id: clinicId })),
+        );
+
+    if (profileError || assignmentsError) {
+      await supabase.auth.admin.deleteUser(existingAuthUser.id);
+      return databaseError("No se pudo completar la configuración del usuario existente.");
+    }
+
+    const audit = await createAuditEntry(
+      {
+        actorUserId: actorId,
+        action: "USER_CREATED",
+        entityType: "user",
+        entityId: existingAuthUser.id,
+        newValues: { role: parsed.data.role, clinic_ids: parsed.data.clinicIds },
+        metadata: { email: parsed.data.email, recovered_from_auth: true },
+      },
+      { getSupabase: async () => supabase },
+    );
+
+    if (!audit.ok) {
+      return databaseError("El usuario ya existía en Auth, pero no se pudo registrar la auditoría.");
+    }
+
+    return { ok: true };
+  }
+
   const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
     parsed.data.email,
-    { redirectTo: process.env.NEXT_PUBLIC_APP_URL },
+    { redirectTo: buildInvitationRedirectUrl(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000") },
   );
 
   if (inviteError || !invited.user) {
-    return databaseError("No se pudo enviar la invitación. Comprueba si el email ya existe.");
+    return databaseError(
+      inviteError?.message || "No se pudo enviar la invitación. Revisa el correo y vuelve a intentarlo.",
+    );
   }
 
   const userId = invited.user.id;
@@ -189,5 +269,88 @@ export async function deactivateAdminUser(
   );
 
   if (!audit.ok) return databaseError("El usuario se desactivó, pero no se pudo registrar la auditoría.");
+  return { ok: true };
+}
+
+export async function reactivateAdminUser(
+  actorId: string,
+  targetId: unknown,
+): Promise<UserAdminResult> {
+  const parsedId = z.string().uuid().safeParse(targetId);
+  if (!parsedId.success || !canManageUser(actorId, parsedId.data)) {
+    return databaseError("No puedes reactivar este usuario.");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { data: target, error: targetError } = await supabase
+    .from("profiles")
+    .select("id, full_name, role, active")
+    .eq("id", parsedId.data)
+    .maybeSingle();
+
+  if (targetError || !target) return databaseError("No se encontró el usuario.");
+  if (target.active) return { ok: true };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ active: true })
+    .eq("id", parsedId.data);
+
+  if (error) return databaseError("No se pudo reactivar el usuario.");
+
+  const audit = await createAuditEntry(
+    {
+      actorUserId: actorId,
+      action: "USER_REACTIVATED",
+      entityType: "user",
+      entityId: parsedId.data,
+      oldValues: { active: false },
+      newValues: { active: true },
+    },
+    { getSupabase: async () => supabase },
+  );
+
+  if (!audit.ok) return databaseError("El usuario se reactivó, pero no se pudo registrar la auditoría.");
+  return { ok: true };
+}
+
+export async function deleteAdminUser(
+  actorId: string,
+  targetId: unknown,
+): Promise<UserAdminResult> {
+  const parsedId = z.string().uuid().safeParse(targetId);
+  if (!parsedId.success || !canManageUser(actorId, parsedId.data)) {
+    return databaseError("No puedes eliminar este usuario.");
+  }
+
+  const supabase = createSupabaseAdminClient();
+  const { error: deleteError } = await supabase.auth.admin.deleteUser(parsedId.data);
+
+  if (deleteError) {
+    return databaseError(deleteError.message || "No se pudo eliminar el usuario.");
+  }
+
+  const [{ error: profileError }, { error: assignmentsError }] = await Promise.all([
+    supabase.from("profiles").delete().eq("id", parsedId.data),
+    supabase.from("user_clinics").delete().eq("user_id", parsedId.data),
+  ]);
+
+  if (profileError || assignmentsError) {
+    return databaseError("El usuario se eliminó de Auth, pero no se pudieron limpiar sus datos locales.");
+  }
+
+  const audit = await createAuditEntry(
+    {
+      actorUserId: actorId,
+      action: "USER_DELETED",
+      entityType: "user",
+      entityId: parsedId.data,
+      oldValues: {},
+      newValues: { deleted: true },
+    },
+    { getSupabase: async () => supabase },
+  );
+
+  if (!audit.ok) return databaseError("El usuario se eliminó, pero no se pudo registrar la auditoría.");
   return { ok: true };
 }

@@ -78,7 +78,7 @@ function NoteFormFields({
           <input type="hidden" name="lead_id" value={leadId} />
           <fieldset>
             <legend className="mb-2 text-sm font-semibold text-foreground">Tipo de actividad</legend>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2">
               {noteTypeSchema.options.map((noteType) => {
                 const option = noteTypes[noteType];
                 const Icon = option.Icon;

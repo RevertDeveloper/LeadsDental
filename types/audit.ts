@@ -12,6 +12,8 @@ export const auditActionSchema = z.enum([
   "AI_FOLLOWUP_FAILED",
   "USER_CREATED",
   "USER_DEACTIVATED",
+  "USER_REACTIVATED",
+  "USER_DELETED",
 ]);
 
 export type AuditAction = z.infer<typeof auditActionSchema>;

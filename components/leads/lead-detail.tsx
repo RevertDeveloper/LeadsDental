@@ -164,25 +164,30 @@ export function LeadDetail({
 
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/[0.04] via-card to-card">
         <CardContent className="flex flex-col gap-5 p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-4">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-              <Sparkles className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <p className="text-xs font-bold tracking-[0.16em] text-primary uppercase">
-                Asistente Vitalis
-              </p>
-              <h2 className="mt-1 text-base font-semibold text-foreground">
-                Seguimiento asistido por IA
-              </h2>
-              <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                El borrador de mensaje estará disponible aquí para que el equipo lo revise antes de enviarlo.
-              </p>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-4">
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+                <Sparkles className="size-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-bold tracking-[0.16em] text-primary uppercase">
+                  Asistente Vitalis
+                </p>
+                <h2 className="mt-1 text-base font-semibold text-foreground">
+                  Seguimiento asistido por IA
+                </h2>
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                  El borrador de mensaje estará disponible aquí para que el equipo lo revise antes de enviarlo.
+                </p>
+              </div>
             </div>
+
+            <GenerateFollowupButton
+              leadId={lead.id}
+              action={generateFollowupAction}
+            />
           </div>
-          <GenerateFollowupButton leadId={lead.id} action={generateFollowupAction} />
-          </div>
+
           <p className="flex items-start gap-2 border-t border-primary/10 pt-4 text-xs leading-5 text-muted-foreground">
             <Bot className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden="true" />
             La IA sólo prepara un borrador comercial con la información disponible. El equipo debe revisarlo antes de cualquier envío.
@@ -190,7 +195,7 @@ export function LeadDetail({
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:items-start">
+      <div className="space-y-6">
         <NoteList notes={notes} />
         <NoteForm leadId={lead.id} action={createNoteAction} />
       </div>

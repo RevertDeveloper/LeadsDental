@@ -14,6 +14,8 @@ const actionLabels: Record<string, string> = {
   AI_FOLLOWUP_FAILED: "IA fallida",
   USER_CREATED: "Usuario creado",
   USER_DEACTIVATED: "Usuario desactivado",
+  USER_REACTIVATED: "Usuario reactivado",
+  USER_DELETED: "Usuario eliminado",
 };
 
 const entityLabels: Record<string, string> = {

@@ -35,7 +35,13 @@ const icons: Record<SidebarIconName, LucideIcon> = {
   audit: ClipboardList,
 };
 
-export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
+export function SidebarNav({
+  items,
+  collapsed = false,
+}: {
+  items: SidebarNavItem[];
+  collapsed?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
@@ -46,6 +52,7 @@ export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
 
         const className = cn(
           "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          collapsed && "lg:justify-center lg:px-2.5",
           isActive && "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm",
           item.disabled && "cursor-not-allowed opacity-45 hover:bg-transparent hover:text-sidebar-foreground/70",
         );
@@ -56,8 +63,8 @@ export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
               strokeWidth={1.9}
               aria-hidden="true"
             />
-            <span>{item.label}</span>
-            {item.disabled ? (
+            {!collapsed ? <span>{item.label}</span> : null}
+            {!collapsed && item.disabled ? (
               <span className="ml-auto hidden text-[9px] font-bold tracking-[0.08em] text-sidebar-foreground/40 uppercase lg:block">
                 Pronto
               </span>
@@ -66,7 +73,12 @@ export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
         );
 
         return item.disabled ? (
-          <span key={item.href} aria-disabled="true" title="Disponible en una fase posterior" className={className}>
+          <span
+            key={item.href}
+            aria-disabled="true"
+            title={collapsed ? item.label : "Disponible en una fase posterior"}
+            className={className}
+          >
             {content}
           </span>
         ) : (
@@ -74,6 +86,7 @@ export function SidebarNav({ items }: { items: SidebarNavItem[] }) {
             key={item.href}
             href={item.href}
             aria-current={isActive ? "page" : undefined}
+            title={collapsed ? item.label : undefined}
             className={className}
           >
             {content}

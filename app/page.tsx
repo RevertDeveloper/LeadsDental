@@ -1,3 +1,5 @@
+import { SupabaseAuthCallback } from "@/components/auth/supabase-auth-callback";
+
 const stack = [
   "Next.js",
   "TypeScript",
@@ -10,6 +12,7 @@ const stack = [
 export default function Home() {
   return (
     <main className="relative isolate flex min-h-screen items-center overflow-hidden bg-[#f8fafc] px-6 py-16 text-[#0f172a] sm:px-10">
+      <SupabaseAuthCallback />
       <div className="absolute -right-32 -top-32 -z-10 size-[28rem] rounded-full bg-[#dbeafe] blur-3xl" />
       <div className="absolute -bottom-48 -left-24 -z-10 size-[24rem] rounded-full bg-[#d1fae5] blur-3xl" />
 

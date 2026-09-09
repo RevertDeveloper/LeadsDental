@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Building2, ChevronRight } from "lucide-react";
+import { Building2, ChevronRight, PlusCircle } from "lucide-react";
 
+import { CreateClinicForm } from "@/components/settings/create-clinic-form";
 import { ClinicList } from "@/components/settings/clinic-list";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AuthClinic } from "@/types/auth";
@@ -37,6 +38,19 @@ export default async function ClinicsSettingsPage() {
         <Link href="/settings/users" className="rounded-xl px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">Usuarios</Link>
         <span className="inline-flex items-center gap-1 rounded-xl bg-primary/10 px-3 py-2 font-medium text-primary" aria-current="page">Clínicas <ChevronRight className="size-3.5" aria-hidden="true" /></span>
       </div>
+
+      <Card>
+        <CardHeader className="border-b border-border/70">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 place-items-center rounded-2xl bg-primary/10 text-primary"><PlusCircle className="size-5" aria-hidden="true" /></span>
+            <div>
+              <CardTitle>Crear nueva clínica</CardTitle>
+              <CardDescription className="mt-1">Añade un centro nuevo con sus datos básicos, color corporativo y estado inicial.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0"><CreateClinicForm /></CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

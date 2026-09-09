@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import { login, type LoginState } from "@/app/login/actions";
@@ -79,6 +80,15 @@ export function LoginForm() {
           {state.message}
         </ActionFeedback>
       ) : null}
+
+      <div className="pt-1 text-right">
+        <Link
+          href="/reset-password"
+          className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+        >
+          He olvidado mi contraseña
+        </Link>
+      </div>
 
       <div aria-live="polite">
         {pending ? (

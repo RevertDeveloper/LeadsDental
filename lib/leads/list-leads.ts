@@ -29,7 +29,15 @@ const leadFields =
   "id, name, phone, phone_normalized, clinic_id, original_clinic_id, treatment, source, status, duplicate_of, created_at, updated_at, created_by, updated_by, deleted_at, deleted_by";
 
 function valueFromSearchParams(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
+  const rawValue = Array.isArray(value) ? value[0] : value;
+
+  if (typeof rawValue !== "string") {
+    return undefined;
+  }
+
+  const normalizedValue = rawValue.trim();
+
+  return normalizedValue.length > 0 ? normalizedValue : undefined;
 }
 
 export function parseLeadFilters(
@@ -41,7 +49,7 @@ export function parseLeadFilters(
     status: valueFromSearchParams(searchParams.status),
     treatment: valueFromSearchParams(searchParams.treatment),
     source: valueFromSearchParams(searchParams.source),
-    sort: valueFromSearchParams(searchParams.sort),
+    sort: valueFromSearchParams(searchParams.sort) ?? "recent",
   });
 
   return parsed.success ? parsed.data : { sort: "recent" };

@@ -1,5 +1,9 @@
-import { CheckCircle2, MapPin, Palette, XCircle } from "lucide-react";
+"use client";
 
+import { CheckCircle2, MapPin, Palette, Power, XCircle } from "lucide-react";
+
+import { toggleClinicStatusAction } from "@/app/(protected)/settings/clinics/actions";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FeedbackState } from "@/components/ui/feedback-state";
 import type { AuthClinic } from "@/types/auth";
@@ -10,7 +14,7 @@ export function ClinicList({ clinics }: { clinics: AuthClinic[] }) {
       <FeedbackState
         variant="empty"
         title="No hay clínicas configuradas"
-        description="La configuración todavía no contiene ningún centro activo."
+        description="Todavía no se ha añadido ningún centro al CRM."
       />
     );
   }
@@ -44,9 +48,32 @@ export function ClinicList({ clinics }: { clinics: AuthClinic[] }) {
                 {clinic.active ? "Activa" : "Inactiva"}
               </span>
             </div>
+            <div className="mt-4">
+              <ClinicStatusToggle clinic={clinic} />
+            </div>
           </CardContent>
         </Card>
       ))}
     </div>
+  );
+}
+
+function ClinicStatusToggle({ clinic }: { clinic: AuthClinic }) {
+  const isActive = clinic.active;
+
+  return (
+    <form action={toggleClinicStatusAction} className="w-full">
+      <input type="hidden" name="clinic_id" value={clinic.id} />
+      <input type="hidden" name="active" value={String(!isActive)} />
+      <Button
+        type="submit"
+        variant={isActive ? "ghost" : "secondary"}
+        size="sm"
+        className={isActive ? "w-full justify-center text-muted-foreground hover:text-destructive" : "w-full justify-center"}
+      >
+        <Power className="size-3.5" aria-hidden="true" />
+        {isActive ? "Desactivar" : "Reactivar"}
+      </Button>
+    </form>
   );
 }

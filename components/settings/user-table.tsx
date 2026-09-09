@@ -1,9 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
-import { UserRoundX } from "lucide-react";
+import { useActionState, type FormEvent } from "react";
+import { RefreshCcw, Trash2, UserRoundX } from "lucide-react";
 
-import { deactivateUserAction, type UserAdminState } from "@/app/(protected)/settings/users/actions";
+import {
+  deactivateUserAction,
+  deleteUserAction,
+  reactivateUserAction,
+  type UserAdminState,
+} from "@/app/(protected)/settings/users/actions";
 import { Button } from "@/components/ui/button";
 import { ActionFeedback } from "@/components/ui/action-feedback";
 import { FeedbackState } from "@/components/ui/feedback-state";
@@ -50,8 +55,25 @@ export function UserTable({ users, currentUserId }: { users: AdminUserRecord[]; 
 }
 
 function UserRow({ user, currentUserId }: { user: AdminUserRecord; currentUserId: string }) {
-  const [state, formAction, pending] = useActionState<UserAdminState, FormData>(deactivateUserAction, {});
   const isSelf = user.id === currentUserId;
+
+  const handleDeleteSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const confirmed = window.confirm("¿Estás seguro de eliminar a este usuario?");
+
+    if (!confirmed) {
+      event.preventDefault();
+    }
+  };
+
+  const [deactivateState, deactivateAction, deactivatePending] = useActionState<UserAdminState, FormData>(
+    deactivateUserAction,
+    {},
+  );
+  const [reactivateState, reactivateAction, reactivatePending] = useActionState<UserAdminState, FormData>(
+    reactivateUserAction,
+    {},
+  );
+  const [deleteState, deleteAction, deletePending] = useActionState<UserAdminState, FormData>(deleteUserAction, {});
 
   return (
     <tr className="align-top">
@@ -75,24 +97,52 @@ function UserRow({ user, currentUserId }: { user: AdminUserRecord; currentUserId
         </span>
       </td>
       <td className="px-6 py-5 text-right">
-        {user.active && !isSelf ? (
-          <form action={formAction} className="inline-flex flex-col items-end gap-1.5">
-            <input type="hidden" name="user_id" value={user.id} />
-            <Button type="submit" variant="ghost" size="sm" disabled={pending} className="text-muted-foreground hover:text-destructive">
-              <UserRoundX aria-hidden="true" />
-              {pending ? "Desactivando…" : "Desactivar"}
-            </Button>
-            {state.message ? (
-              <ActionFeedback
-                variant={state.success ? "success" : "error"}
-                className="px-3 py-2 text-left text-xs leading-5"
-              >
-                {state.message}
+        {isSelf ? (
+          <span className="text-xs text-muted-foreground">Sesión actual</span>
+        ) : (
+          <div className="inline-flex flex-col items-end gap-1.5">
+            {user.active ? (
+              <form action={deactivateAction} className="w-full">
+                <input type="hidden" name="user_id" value={user.id} />
+                <Button type="submit" variant="ghost" size="sm" disabled={deactivatePending} className="text-muted-foreground hover:text-destructive">
+                  <UserRoundX aria-hidden="true" />
+                  {deactivatePending ? "Desactivando…" : "Desactivar"}
+                </Button>
+              </form>
+            ) : (
+              <form action={reactivateAction} className="w-full">
+                <input type="hidden" name="user_id" value={user.id} />
+                <Button type="submit" variant="secondary" size="sm" disabled={reactivatePending}>
+                  <RefreshCcw aria-hidden="true" />
+                  {reactivatePending ? "Reactivando…" : "Reactivar"}
+                </Button>
+              </form>
+            )}
+
+            <form action={deleteAction} className="w-full" onSubmit={handleDeleteSubmit}>
+              <input type="hidden" name="user_id" value={user.id} />
+              <Button type="submit" variant="ghost" size="sm" disabled={deletePending} className="text-muted-foreground hover:text-destructive">
+                <Trash2 aria-hidden="true" />
+                {deletePending ? "Eliminando…" : "Eliminar"}
+              </Button>
+            </form>
+
+            {deactivateState.message ? (
+              <ActionFeedback variant={deactivateState.success ? "success" : "error"} className="px-3 py-2 text-left text-xs leading-5">
+                {deactivateState.message}
               </ActionFeedback>
             ) : null}
-          </form>
-        ) : (
-          <span className="text-xs text-muted-foreground">{isSelf ? "Sesión actual" : "Sin acciones"}</span>
+            {reactivateState.message ? (
+              <ActionFeedback variant={reactivateState.success ? "success" : "error"} className="px-3 py-2 text-left text-xs leading-5">
+                {reactivateState.message}
+              </ActionFeedback>
+            ) : null}
+            {deleteState.message ? (
+              <ActionFeedback variant={deleteState.success ? "success" : "error"} className="px-3 py-2 text-left text-xs leading-5">
+                {deleteState.message}
+              </ActionFeedback>
+            ) : null}
+          </div>
         )}
       </td>
     </tr>

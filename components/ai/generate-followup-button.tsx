@@ -29,15 +29,25 @@ export function GenerateFollowupButton({
   >(action, {});
 
   return (
-    <div className="w-full shrink-0 sm:w-auto">
-      <form action={formAction}>
+    <div className="w-full">
+      <form action={formAction} className="w-full">
         <input type="hidden" name="lead_id" value={leadId} />
         <button
           type="submit"
           disabled={pending}
-          className={buttonVariants({ size: "lg", className: "w-full sm:w-auto" })}
+          className={buttonVariants({
+            size: "lg",
+            className:
+              "w-full min-h-12 rounded-2xl bg-gradient-to-r from-primary via-primary to-sky-500 px-4 text-base font-semibold text-primary-foreground shadow-[0_12px_24px_-12px_rgba(37,99,235,0.9)] transition-all hover:-translate-y-0.5 hover:shadow-[0_18px_36px_-12px_rgba(37,99,235,1)] sm:w-auto",
+          })}
         >
-          {pending ? <AiLoadingState /> : state.success ? <Check aria-hidden="true" /> : <Sparkles aria-hidden="true" />}
+          {pending ? (
+            <AiLoadingState />
+          ) : state.success ? (
+            <Check aria-hidden="true" />
+          ) : (
+            <Sparkles aria-hidden="true" />
+          )}
           <span>{pending ? "Generando…" : "Generar mensaje de seguimiento"}</span>
         </button>
       </form>
@@ -55,7 +65,7 @@ export function GenerateFollowupButton({
       ) : null}
 
       {state.generatedMessage ? (
-        <div className="mt-4 sm:min-w-[28rem]">
+        <div className="mt-4 w-full">
           <GeneratedMessage message={state.generatedMessage} />
         </div>
       ) : null}

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { createAdminUser, deactivateAdminUser } from "@/lib/users";
+import { createAdminUser, deactivateAdminUser, deleteAdminUser, reactivateAdminUser } from "@/lib/users";
 import { AuthorizationError, requireRole } from "@/lib/permissions";
 
 export type UserAdminState = {
@@ -39,5 +39,31 @@ export async function deactivateUserAction(_previousState: UserAdminState, formD
   } catch (error) {
     if (error instanceof AuthorizationError) return { message: error.message };
     return { message: "No se pudo desactivar el usuario. Inténtalo de nuevo." };
+  }
+}
+
+export async function reactivateUserAction(_previousState: UserAdminState, formData: FormData): Promise<UserAdminState> {
+  try {
+    const actor = await requireRole("ADMIN");
+    const result = await reactivateAdminUser(actor.id, formData.get("user_id"));
+    if (!result.ok) return result;
+    revalidatePath("/settings/users");
+    return { success: true, message: "Usuario reactivado." };
+  } catch (error) {
+    if (error instanceof AuthorizationError) return { message: error.message };
+    return { message: "No se pudo reactivar el usuario. Inténtalo de nuevo." };
+  }
+}
+
+export async function deleteUserAction(_previousState: UserAdminState, formData: FormData): Promise<UserAdminState> {
+  try {
+    const actor = await requireRole("ADMIN");
+    const result = await deleteAdminUser(actor.id, formData.get("user_id"));
+    if (!result.ok) return result;
+    revalidatePath("/settings/users");
+    return { success: true, message: "Usuario eliminado." };
+  } catch (error) {
+    if (error instanceof AuthorizationError) return { message: error.message };
+    return { message: "No se pudo eliminar el usuario. Inténtalo de nuevo." };
   }
 }

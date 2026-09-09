@@ -1,11 +1,15 @@
-import Link from "next/link";
-import { ArrowUpRight, Phone } from "lucide-react";
+"use client";
 
-import { LeadClinicBadge } from "@/components/leads/lead-clinic-badge";
-import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
+import Link from "next/link";
+import { ArrowUpRight, ChevronLeft, ChevronRight, MoveHorizontal, Phone } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
 import { DeleteLeadDialog } from "@/components/leads/delete-lead-dialog";
-import { Card } from "@/components/ui/card";
+import { LeadClinicBadge } from "@/components/leads/lead-clinic-badge";
 import { LeadPriorityIndicator } from "@/components/leads/lead-priority-indicator";
+import { LeadStatusBadge } from "@/components/leads/lead-status-badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { requiresAttention } from "@/lib/leads/priority";
 import type { LeadWithClinic } from "@/types/leads";
 
@@ -31,9 +35,91 @@ function formatDate(date: string) {
 }
 
 export function LeadTable({ leads }: { leads: LeadWithClinic[] }) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  useEffect(() => {
+    const updateScrollState = () => {
+      const element = scrollContainerRef.current;
+
+      if (!element) {
+        return;
+      }
+
+      const maxScrollLeft = element.scrollWidth - element.clientWidth;
+      setCanScrollLeft(element.scrollLeft > 8);
+      setCanScrollRight(element.scrollLeft < maxScrollLeft - 8);
+    };
+
+    updateScrollState();
+
+    const element = scrollContainerRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.addEventListener("scroll", updateScrollState);
+    window.addEventListener("resize", updateScrollState);
+
+    return () => {
+      element.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [leads.length]);
+
+  const scrollTable = (direction: "left" | "right") => {
+    const element = scrollContainerRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const distance = Math.min(element.clientWidth * 0.85, 260);
+
+    element.scrollBy({
+      left: direction === "left" ? -distance : distance,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <Card className="overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-3 py-2">
+        <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.14em] text-muted-foreground uppercase">
+          <MoveHorizontal className="size-3.5 text-primary" aria-hidden="true" />
+          <span>Vista horizontal</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="rounded-lg"
+            onClick={() => scrollTable("left")}
+            disabled={!canScrollLeft}
+            aria-label="Mover tabla hacia la izquierda"
+          >
+            <ChevronLeft className="size-3.5" aria-hidden="true" />
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="rounded-lg"
+            onClick={() => scrollTable("right")}
+            disabled={!canScrollRight}
+            aria-label="Mover tabla hacia la derecha"
+          >
+            <ChevronRight className="size-3.5" aria-hidden="true" />
+          </Button>
+        </div>
+      </div>
+
+      <div ref={scrollContainerRef} className="overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse text-left">
           <thead className="border-b border-border bg-muted/55">
             <tr className="text-[10px] font-bold tracking-[0.14em] text-muted-foreground uppercase">

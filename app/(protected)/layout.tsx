@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import { ProtectedAppShell } from "@/components/layout/protected-app-shell";
+import { listLeads } from "@/lib/leads/list-leads";
 import { AuthorizationError } from "@/lib/permissions/errors";
 import { requireAuthenticatedUser } from "@/lib/permissions";
 
@@ -13,7 +14,11 @@ export default async function ProtectedLayout({
 }: {
   children: ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const initialSidebarCollapsed = cookieStore.get("leadsdental.sidebar.collapsed")?.value === "true";
+
   let user;
+  let notifications: { id: string; title: string; description: string; href: string }[] = [];
 
   try {
     user = await requireAuthenticatedUser();
@@ -28,15 +33,25 @@ export default async function ProtectedLayout({
     throw error;
   }
 
+  try {
+    const leads = await listLeads({ status: "nuevo", sort: "recent" });
+    notifications = leads.slice(0, 4).map((lead) => ({
+      id: lead.id,
+      title: `${lead.name} necesita seguimiento`,
+      description: `${lead.clinic.name} · ${lead.treatment}`,
+      href: `/leads/${lead.id}`,
+    }));
+  } catch {
+    notifications = [];
+  }
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Sidebar user={user} />
-      <div className="min-h-screen lg:pl-72">
-        <Header user={user} />
-        <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-          {children}
-        </main>
-      </div>
-    </div>
+    <ProtectedAppShell
+      user={user}
+      notifications={notifications}
+      initialCollapsed={initialSidebarCollapsed}
+    >
+      {children}
+    </ProtectedAppShell>
   );
 }
